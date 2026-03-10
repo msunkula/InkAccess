@@ -947,14 +947,125 @@ const autoDetectDiagrams = async (imageBase64: string): Promise<ManualSelection[
 };
 
 const TEMPLATE_CSS = `
+    :root {
+        --primary-color: #3498db;
+        --sidebar-bg: #2c3e50;
+        --sidebar-text: #ecf0f1;
+        --sidebar-hover: #34495e;
+        --content-max-width: 900px;
+    }
+
     body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         line-height: 1.6;
-        max-width: 900px;
-        margin: 0 auto;
-        padding: 20px;
+        margin: 0;
+        padding: 0;
         background-color: #f8f9fa;
         color: #212529;
+        display: flex;
+        min-height: 100vh;
+    }
+    
+    .sidebar {
+        width: 280px;
+        background-color: var(--sidebar-bg);
+        color: var(--sidebar-text);
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        overflow-y: auto;
+        padding: 30px 20px;
+        z-index: 100;
+        box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+    }
+
+    .sidebar h2 {
+        font-size: 1.1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        color: var(--primary-color);
+    }
+
+    .sidebar nav ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .sidebar nav li {
+        margin-bottom: 8px;
+    }
+
+    .sidebar nav a {
+        color: var(--sidebar-text);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        padding: 10px 15px;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        font-size: 0.95rem;
+    }
+
+    .sidebar nav a:hover {
+        background-color: var(--sidebar-hover);
+        transform: translateX(5px);
+    }
+
+    .sidebar nav a.active {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .main-wrapper {
+        margin-left: 280px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    main {
+        max-width: var(--content-max-width);
+        margin: 0 auto;
+        padding: 60px 40px;
+        background-color: white;
+        box-shadow: 0 0 20px rgba(0,0,0,0.05);
+        min-height: 100vh;
+    }
+
+    .doc-header {
+        margin-bottom: 50px;
+        padding-bottom: 30px;
+        border-bottom: 2px solid #eee;
+    }
+
+    .doc-title {
+        font-size: 2.5rem;
+        color: #2c3e50;
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    @media (max-width: 1024px) {
+        body {
+            flex-direction: column;
+        }
+        .sidebar {
+            width: 100%;
+            position: relative;
+            height: auto;
+            padding: 20px;
+        }
+        .main-wrapper {
+            margin-left: 0;
+        }
+        main {
+            padding: 30px 20px;
+        }
     }
     
     h3 { 
@@ -1551,13 +1662,20 @@ export default function App() {
     const dataToUse = currentResults || results;
     if (dataToUse.length === 0) return;
 
+    // Extract title from the first line of the first page
+    const firstPageHtml = dataToUse[0].htmlContent;
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = firstPageHtml;
+    const firstLine = tempDiv.innerText.trim().split('\n')[0] || 'Untitled Document';
+    const docTitle = firstLine.length > 100 ? firstLine.substring(0, 100) + '...' : firstLine;
+
     const fullHtml = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${customFileName || originalFileName.replace('.pdf', '')} (${conversionMode === 'transcription' ? 'Page by Page' : 'Inline Diagrams'})</title>
+    <title>${docTitle} - Accessible Transcription</title>
     <script>
         window.MathJax = {
             tex: {
@@ -1575,46 +1693,89 @@ export default function App() {
     </style>
 </head>
 <body>
-    <main>
-        ${dataToUse.map(res => {
-          let pageHtml = res.htmlContent;
-          
-          // Replace placeholders with actual edited images for the download
-          if (conversionMode === 'inline-diagrams' && res.diagrams) {
-            res.diagrams.forEach(diag => {
-              const imgHtml = `
-                <div class="inline-diagram-container" style="width: ${diag.width}%; margin-left: auto; margin-right: auto;">
-                  <img src="${diag.editedBase64}" alt="${diag.alt}">
-                  <div class="inline-diagram-caption">${diag.alt}</div>
-                </div>
-              `;
-              // Use a more robust replacement that handles both self-closing and separate tags
-              const placeholderRegex = new RegExp(`<diagram-placeholder[^>]*id="${diag.id}"[^>]*>(?:.*?<\/diagram-placeholder>)?`, 'g');
-              pageHtml = pageHtml.replace(placeholderRegex, imgHtml);
-            });
-          }
+    <aside class="sidebar" role="complementary">
+        <h2>Table of Contents</h2>
+        <nav aria-label="Page navigation">
+            <ul>
+                ${dataToUse.map(res => `
+                    <li><a href="#page-section-${res.pageNumber}">Page ${res.pageNumber}</a></li>
+                `).join('')}
+            </ul>
+        </nav>
+    </aside>
 
-          return `
-            <section aria-labelledby="page-title-${res.pageNumber}">
-                <h3 id="page-title-${res.pageNumber}">Page ${res.pageNumber}</h3>
-                ${conversionMode === 'transcription' ? `
-                <figure>
-                    <img src="${res.imageBase64}" alt="Original handwritten page ${res.pageNumber}">
-                    <figcaption><strong>Original handwritten page ${res.pageNumber}</strong></figcaption>
-                </figure>
-                ` : ''}
-                <div class="page-content">
-                    ${pageHtml}
-                </div>
-                ${res.pageNumber < dataToUse.length ? '<hr>' : ''}
-            </section>
-          `;
-        }).join('')}
-    </main>
-    <footer style="text-align: center; padding: 40px; margin-top: 60px; border-top: 1px solid #dee2e6; color: #6c757d; font-size: 0.8em;">
-        <p>© 2026 Mahesh Sunkula • Licensed under MIT</p>
-        <p>Generated by InkAccess 🖋️</p>
-    </footer>
+    <div class="main-wrapper">
+        <main id="main-content" role="main">
+            <header class="doc-header">
+                <h1 class="doc-title">${docTitle}</h1>
+                <p style="color: #6c757d; margin-top: 10px;">Accessible transcription generated on ${new Date().toLocaleDateString()}</p>
+            </header>
+
+            ${dataToUse.map(res => {
+              let pageHtml = res.htmlContent;
+              
+              // Replace placeholders with actual edited images for the download
+              if (conversionMode === 'inline-diagrams' && res.diagrams) {
+                res.diagrams.forEach(diag => {
+                  const imgHtml = `
+                    <div class="inline-diagram-container" style="width: ${diag.width}%; margin-left: auto; margin-right: auto;">
+                      <img src="${diag.editedBase64}" alt="${diag.alt}">
+                      <div class="inline-diagram-caption">${diag.alt}</div>
+                    </div>
+                  `;
+                  // Use a more robust replacement that handles both self-closing and separate tags
+                  const placeholderRegex = new RegExp(`<diagram-placeholder[^>]*id="${diag.id}"[^>]*>(?:.*?<\/diagram-placeholder>)?`, 'g');
+                  pageHtml = pageHtml.replace(placeholderRegex, imgHtml);
+                });
+              }
+
+              return `
+                <section id="page-section-${res.pageNumber}" aria-labelledby="page-title-${res.pageNumber}">
+                    <h3 id="page-title-${res.pageNumber}">Page ${res.pageNumber}</h3>
+                    ${conversionMode === 'transcription' ? `
+                    <figure>
+                        <img src="${res.imageBase64}" alt="Original handwritten page ${res.pageNumber}">
+                        <figcaption><strong>Original handwritten page ${res.pageNumber}</strong></figcaption>
+                    </figure>
+                    ` : ''}
+                    <div class="page-content">
+                        ${pageHtml}
+                    </div>
+                    ${res.pageNumber < dataToUse.length ? '<hr style="margin: 60px 0; border: 0; border-top: 1px solid #eee;">' : ''}
+                </section>
+              `;
+            }).join('')}
+        </main>
+        
+        <footer style="text-align: center; padding: 40px; margin-top: auto; border-top: 1px solid #dee2e6; color: #6c757d; font-size: 0.8em; background: white;">
+            <p>© 2026 Mahesh Sunkula • Licensed under MIT</p>
+            <p>Generated by InkAccess 🖋️</p>
+        </footer>
+    </div>
+
+    <script>
+        // Simple scroll spy for the sidebar
+        const sections = document.querySelectorAll('section');
+        const navLinks = document.querySelectorAll('.sidebar nav a');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (pageYOffset >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href').includes(current)) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
     `.trim();
