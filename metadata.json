@@ -1,0 +1,5 @@
+{
+  "name": "InkAccess 🖋️",
+  "description": "Makes ink accessible, by convert handwritten notes to WCAG 2.2 Level AA compliant HTML with MathJax support and accessible structure.",
+  "requestFramePermissions": []
+}
