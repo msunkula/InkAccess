@@ -967,7 +967,7 @@ const TEMPLATE_CSS = `
     }
     
     .sidebar {
-        width: 280px;
+        width: 160px;
         background-color: var(--sidebar-bg);
         color: var(--sidebar-text);
         position: fixed;
@@ -975,7 +975,7 @@ const TEMPLATE_CSS = `
         bottom: 0;
         left: 0;
         overflow-y: auto;
-        padding: 30px 20px;
+        padding: 20px 10px;
         z-index: 100;
         box-shadow: 4px 0 10px rgba(0,0,0,0.1);
     }
@@ -1022,7 +1022,7 @@ const TEMPLATE_CSS = `
     }
 
     .main-wrapper {
-        margin-left: 280px;
+        margin-left: 160px;
         flex: 1;
         display: flex;
         flex-direction: column;
@@ -1041,6 +1041,31 @@ const TEMPLATE_CSS = `
         margin-bottom: 50px;
         padding-bottom: 30px;
         border-bottom: 2px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .download-original-btn {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .download-original-btn:hover {
+        background-color: #2980b9;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
     }
 
     .doc-title {
@@ -1224,8 +1249,9 @@ export default function App() {
   const [results, setResults] = useState<PageResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'preview' | 'code'>('preview');
-  const [conversionMode, setConversionMode] = useState<'transcription' | 'inline-diagrams'>('transcription');
-  const [diagramDetectionMode, setDiagramDetectionMode] = useState<'manual' | 'auto'>('manual');
+  const [mainMode, setMainMode] = useState<'default' | 'customize'>('default');
+  const [conversionMode, setConversionMode] = useState<'transcription' | 'inline-diagrams'>('inline-diagrams');
+  const [diagramDetectionMode, setDiagramDetectionMode] = useState<'manual' | 'auto'>('auto');
   const [originalFileBase64, setOriginalFileBase64] = useState<string | null>(null);
   const [originalFile, setOriginalFile] = useState<File | null>(null);
   const [originalFileName, setOriginalFileName] = useState<string>('original_notes.pdf');
@@ -1669,6 +1695,13 @@ export default function App() {
     const firstLine = tempDiv.innerText.trim().split('\n')[0] || 'Untitled Document';
     const docTitle = firstLine.length > 100 ? firstLine.substring(0, 100) + '...' : firstLine;
 
+    const baseFileName = customFileName.trim() 
+      ? (customFileName.endsWith('.html') ? customFileName.replace('.html', '') : customFileName)
+      : `Accessible_${originalFileName.replace('.pdf', '')}`;
+    
+    const htmlFileName = `${baseFileName}.html`;
+    const pdfFileName = `${baseFileName}.pdf`;
+
     const fullHtml = `
 <!DOCTYPE html>
 <html lang="en">
@@ -1707,8 +1740,16 @@ export default function App() {
     <div class="main-wrapper">
         <main id="main-content" role="main">
             <header class="doc-header">
-                <h1 class="doc-title">${docTitle}</h1>
-                <p style="color: #6c757d; margin-top: 10px;">Accessible transcription generated on ${new Date().toLocaleDateString()}</p>
+                <div style="flex: 1;">
+                    <h1 class="doc-title">${docTitle}</h1>
+                    <p style="color: #6c757d; margin-top: 10px;">Accessible transcription generated on ${new Date().toLocaleDateString()}</p>
+                </div>
+                ${originalFileBase64 ? `
+                <a href="${originalFileBase64}" download="${pdfFileName}" class="download-original-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Original Notes
+                </a>
+                ` : ''}
             </header>
 
             ${dataToUse.map(res => {
@@ -1720,7 +1761,6 @@ export default function App() {
                   const imgHtml = `
                     <div class="inline-diagram-container" style="width: ${diag.width}%; margin-left: auto; margin-right: auto;">
                       <img src="${diag.editedBase64}" alt="${diag.alt}">
-                      <div class="inline-diagram-caption">${diag.alt}</div>
                     </div>
                   `;
                   // Use a more robust replacement that handles both self-closing and separate tags
@@ -1747,9 +1787,8 @@ export default function App() {
             }).join('')}
         </main>
         
-        <footer style="text-align: center; padding: 40px; margin-top: auto; border-top: 1px solid #dee2e6; color: #6c757d; font-size: 0.8em; background: white;">
-            <p>© 2026 Mahesh Sunkula • Licensed under MIT</p>
-            <p>Generated by InkAccess 🖋️</p>
+        <footer style="text-align: center; padding: 20px; margin-top: auto; border-top: 1px solid #dee2e6; color: #6c757d; font-size: 0.8em; background: white;">
+            <p>Generated on ${new Date().toLocaleDateString()}</p>
         </footer>
     </div>
 
@@ -1788,10 +1827,7 @@ export default function App() {
     } else {
       const link = document.createElement('a');
       link.href = url;
-      const fileName = customFileName.trim() 
-        ? (customFileName.endsWith('.html') ? customFileName : `${customFileName}.html`)
-        : `Accessible_${originalFileName.replace('.pdf', '')}.html`;
-      link.download = fileName;
+      link.download = htmlFileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -1878,62 +1914,86 @@ export default function App() {
         <div className="w-full max-w-4xl mx-auto space-y-8">
           {step === 'upload' && (
             <>
-              <div className="flex flex-col items-center gap-6 mb-8">
-                <div className="flex justify-center gap-4">
+              <div className="flex flex-col items-center gap-8 mb-12">
+                <div className="flex justify-center gap-6">
                   <button
-                    onClick={() => setConversionMode('transcription')}
+                    onClick={() => {
+                      setMainMode('default');
+                      setConversionMode('inline-diagrams');
+                      setDiagramDetectionMode('auto');
+                    }}
                     className={cn(
-                      "px-8 py-3 rounded-2xl text-sm font-bold uppercase tracking-widest transition-all border-2 flex items-center gap-2",
-                      conversionMode === 'transcription' 
-                        ? "bg-emerald-400 text-black border-white shadow-[0_0_20px_rgba(52,211,153,0.4)] scale-105" 
+                      "px-12 py-5 rounded-[32px] text-sm font-bold uppercase tracking-widest transition-all border-2 flex items-center gap-3",
+                      mainMode === 'default'
+                        ? "bg-emerald-400 text-black border-white shadow-[0_0_40px_rgba(52,211,153,0.3)] scale-105" 
                         : "bg-white/5 text-stone-400 border-white/10 hover:bg-white/10 hover:border-white/20"
                     )}
                   >
-                    {conversionMode === 'transcription' && <CheckCircle2 className="w-4 h-4" />}
-                    Page by Page Transcription
+                    {mainMode === 'default' && <CheckCircle2 className="w-5 h-5" />}
+                    Default
                   </button>
                   <button
-                    onClick={() => setConversionMode('inline-diagrams')}
+                    onClick={() => setMainMode('customize')}
                     className={cn(
-                      "px-8 py-3 rounded-2xl text-sm font-bold uppercase tracking-widest transition-all border-2 flex items-center gap-2",
-                      conversionMode === 'inline-diagrams' 
-                        ? "bg-emerald-400 text-black border-white shadow-[0_0_20px_rgba(52,211,153,0.4)] scale-105" 
+                      "px-12 py-5 rounded-[32px] text-sm font-bold uppercase tracking-widest transition-all border-2 flex items-center gap-3",
+                      mainMode === 'customize'
+                        ? "bg-emerald-400 text-black border-white shadow-[0_0_40px_rgba(52,211,153,0.3)] scale-105" 
                         : "bg-white/5 text-stone-400 border-white/10 hover:bg-white/10 hover:border-white/20"
                     )}
                   >
-                    {conversionMode === 'inline-diagrams' && <CheckCircle2 className="w-4 h-4" />}
-                    Inline Diagrams
+                    {mainMode === 'customize' && <CheckCircle2 className="w-5 h-5" />}
+                    Customize
                   </button>
                 </div>
-                
-                {conversionMode === 'inline-diagrams' && (
-                  <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10 mt-4">
-                    <button
-                      onClick={() => setDiagramDetectionMode('manual')}
-                      className={cn(
-                        "px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                        diagramDetectionMode === 'manual' ? "bg-white/10 text-white shadow-lg" : "text-stone-500 hover:text-stone-300"
-                      )}
-                    >
-                      Manual Selection
-                    </button>
-                    <button
-                      onClick={() => setDiagramDetectionMode('auto')}
-                      className={cn(
-                        "px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
-                        diagramDetectionMode === 'auto' ? "bg-emerald-500/20 text-emerald-400 shadow-lg border border-emerald-500/20" : "text-stone-500 hover:text-stone-300"
-                      )}
-                    >
-                      <Wand2 className="w-3 h-3" />
-                      Auto-Detect (AI)
-                    </button>
+
+                {mainMode === 'customize' ? (
+                  <div className="flex flex-col items-center gap-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div className="text-[10px] text-stone-500 font-black uppercase tracking-[0.2em] mb-2 opacity-60">Select Custom Option</div>
+                    <div className="flex justify-center gap-4">
+                      <button
+                        onClick={() => setConversionMode('transcription')}
+                        className={cn(
+                          "px-8 py-3 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all border-2 flex items-center gap-2",
+                          conversionMode === 'transcription' 
+                            ? "bg-white/20 text-white border-white/40 shadow-lg" 
+                            : "bg-white/5 text-stone-500 border-white/10 hover:bg-white/10 hover:border-white/20"
+                        )}
+                      >
+                        {conversionMode === 'transcription' && <CheckCircle2 className="w-4 h-4" />}
+                        Page by Page
+                      </button>
+                      <button
+                        onClick={() => {
+                          setConversionMode('inline-diagrams');
+                          setDiagramDetectionMode('manual');
+                        }}
+                        className={cn(
+                          "px-8 py-3 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all border-2 flex items-center gap-2",
+                          conversionMode === 'inline-diagrams' && diagramDetectionMode === 'manual'
+                            ? "bg-white/20 text-white border-white/40 shadow-lg" 
+                            : "bg-white/5 text-stone-500 border-white/10 hover:bg-white/10 hover:border-white/20"
+                        )}
+                      >
+                        {(conversionMode === 'inline-diagrams' && diagramDetectionMode === 'manual') && <CheckCircle2 className="w-4 h-4" />}
+                        Manual Diagram Selection
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2 animate-in fade-in duration-500">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 rounded-full border border-emerald-500/20">
+                      <Wand2 className="w-3 h-3 text-emerald-400" />
+                      <span className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">Inline Diagrams with auto detect</span>
+                    </div>
                   </div>
                 )}
-
-                <p className="text-stone-500 text-sm font-medium text-center max-w-lg italic mt-4">
-                  {conversionMode === 'transcription' 
-                    ? "Strictly transcribes every word, formula, and symbol exactly as written in your notes, page by page, with notes followed by html." 
-                    : "Transcribes your notes while identifying and extracting diagrams to place them contextually inline with the text."}
+                
+                <p className="text-stone-500 text-sm font-medium text-center max-w-lg italic">
+                  {mainMode === 'default' 
+                    ? "Transcribes your notes while identifying and extracting diagrams to place them contextually inline with the text."
+                    : conversionMode === 'transcription' 
+                      ? "Strictly transcribes every word, formula, and symbol exactly as written in your notes, page by page, with notes followed by html." 
+                      : "Manually select areas of your notes that contain diagrams to be extracted and placed inline."}
                 </p>
               </div>
 
@@ -2183,7 +2243,11 @@ export default function App() {
                   </div>
                   <h2 className="text-3xl font-bold tracking-tight">Output Preview</h2>
                   <span className="px-4 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[10px] font-black uppercase tracking-widest text-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.1)]">
-                    {conversionMode === 'transcription' ? 'Page by Page' : 'Inline Diagrams'}
+                    {conversionMode === 'transcription' 
+                      ? 'Page by Page' 
+                      : diagramDetectionMode === 'auto' 
+                        ? 'Inline Diagrams (Auto)' 
+                        : 'Inline Diagrams (Manual)'}
                   </span>
                 </div>
                 <div className="flex bg-white/5 p-1.5 rounded-full border border-white/10" role="group" aria-label="View mode">
