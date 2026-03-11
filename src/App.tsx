@@ -890,9 +890,18 @@ const runWcagCleanup = async (html: string, pageNumber: number): Promise<string>
 const autoDetectDiagrams = async (imageBase64: string): Promise<ManualSelection[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
   const prompt = `
-    Identify all diagrams, charts, graphs, and illustrations on this handwritten lecture notes page.
-    Return the bounding boxes for each diagram in normalized coordinates [ymin, xmin, ymax, xmax] (0-1000).
-    Return ONLY a JSON array of objects with 'box_2d' property.
+    Identify all visual elements on this handwritten lecture notes page that are NOT standard text.
+    This includes:
+    - Diagrams, sketches, and drawings
+    - Mathematical graphs and coordinate systems (include axes and labels)
+    - Flowcharts and process diagrams
+    - Chemical structures and molecular models
+    - Circuit diagrams and logic gates
+    - Tables that are drawn by hand
+    
+    CRITICAL: The bounding box [ymin, xmin, ymax, xmax] must TIGHTLY encompass the entire visual element, including any associated labels, captions, or axis titles that are physically part of the diagram.
+    
+    Return ONLY a JSON array of objects with 'box_2d' property in normalized coordinates (0-1000).
     Example: [{"box_2d": [100, 200, 300, 400]}]
   `;
   
@@ -1148,6 +1157,36 @@ const TEMPLATE_CSS = `
         margin: 15px 0;
         border-left: 5px solid #17a2b8;
     }
+
+    .side-by-side-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+        margin-bottom: 60px;
+        align-items: start;
+    }
+
+    .side-by-side-image {
+        position: sticky;
+        top: 20px;
+    }
+
+    .side-by-side-image img {
+        width: 100%;
+        height: auto;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    @media (max-width: 768px) {
+        .side-by-side-container {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        .side-by-side-image {
+            position: static;
+        }
+    }
     
     .warning {
         background-color: #f8d7da;
@@ -1250,7 +1289,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'preview' | 'code'>('preview');
   const [mainMode, setMainMode] = useState<'default' | 'customize'>('default');
-  const [conversionMode, setConversionMode] = useState<'transcription' | 'inline-diagrams'>('inline-diagrams');
+  const [conversionMode, setConversionMode] = useState<'transcription' | 'inline-diagrams' | 'side-by-side'>('inline-diagrams');
   const [diagramDetectionMode, setDiagramDetectionMode] = useState<'manual' | 'auto'>('auto');
   const [originalFileBase64, setOriginalFileBase64] = useState<string | null>(null);
   const [originalFile, setOriginalFile] = useState<File | null>(null);
@@ -1490,6 +1529,15 @@ export default function App() {
           In the HTML output, place a special tag <diagram-placeholder id="diag-N" ymin="Y1" xmin="X1" ymax="Y2" xmax="X2" alt="Detailed description of the diagram"></diagram-placeholder> exactly where each diagram appears in the notes.
           Use the IDs provided (diag-0, diag-1, etc.) and the coordinates I gave you.
           
+          ALT TEXT GUIDELINES:
+          The 'alt' attribute must provide a comprehensive, accessible description of the diagram.
+          - Identify the type of diagram (e.g., "Line graph showing...", "Flowchart of...").
+          - Describe the main components and their relationships.
+          - For graphs: Mention axes, scales, and key data points or trends.
+          - For flowcharts: Describe the sequence of steps and decision points.
+          - Include any text, labels, or formulas that are part of the diagram itself.
+          - Aim for a description that allows a visually impaired student to fully understand the educational content of the diagram.
+          
           Key Requirements:
           1. Use proper MathJax delimiters: \\(inline math\\) and \\[display math\\]
           2. Maintain semantic HTML structure with proper heading hierarchy (start at h4 for major topics within this page).
@@ -1500,16 +1548,16 @@ export default function App() {
              - <div class="important"> for key notes
              - <div class="warning"> for warnings
              - <div class="solution"> for example solutions
-             - <div class="visual-desc"> for detailed visual descriptions of any diagrams or graphs found on the page.
-          4. Preserve all worked examples with step-by-step solutions exactly as written.
-          5. Keep natural paragraph flow - avoid excessive bullet points unless they are in the original notes.
-          6. Use tables only for structured data.
-          7. Bold only for critical terms (Definition:, Theorem:, etc.).
-          8. Maintain academic tone and precision.
-          9. Return ONLY the HTML content that would go inside a <div class="page-content"> tag. Do not include the <div> tag itself or any markdown code blocks.
+          4. NO VISUAL DESCRIPTION DIV: Do NOT include a separate <div class="visual-desc"> for diagrams that have a <diagram-placeholder>. The detailed description MUST be contained entirely within the 'alt' attribute of the placeholder tag.
+          5. Preserve all worked examples with step-by-step solutions exactly as written.
+          6. Keep natural paragraph flow - avoid excessive bullet points unless they are in the original notes.
+          7. Use tables only for structured data.
+          8. Bold only for critical terms (Definition:, Theorem:, etc.).
+          9. Maintain academic tone and precision.
+          10. Return ONLY the HTML content that would go inside a <div class="page-content"> tag. Do not include the <div> tag itself or any markdown code blocks.
         `;
 
-        const prompt = conversionMode === 'transcription' ? transcriptionPrompt : inlineDiagramsPrompt;
+        const prompt = (conversionMode === 'transcription' || conversionMode === 'side-by-side') ? transcriptionPrompt : inlineDiagramsPrompt;
 
         const response = await ai.models.generateContent({
           model: "gemini-3-flash-preview",
@@ -1772,6 +1820,16 @@ export default function App() {
               return `
                 <section id="page-section-${res.pageNumber}" aria-labelledby="page-title-${res.pageNumber}">
                     <h3 id="page-title-${res.pageNumber}">Page ${res.pageNumber}</h3>
+                    ${conversionMode === 'side-by-side' ? `
+                    <div class="side-by-side-container">
+                        <div class="side-by-side-image">
+                            <img src="${res.imageBase64}" alt="Original handwritten page ${res.pageNumber}">
+                        </div>
+                        <div class="page-content">
+                            ${pageHtml}
+                        </div>
+                    </div>
+                    ` : `
                     ${conversionMode === 'transcription' ? `
                     <figure>
                         <img src="${res.imageBase64}" alt="Original handwritten page ${res.pageNumber}">
@@ -1781,6 +1839,7 @@ export default function App() {
                     <div class="page-content">
                         ${pageHtml}
                     </div>
+                    `}
                     ${res.pageNumber < dataToUse.length ? '<hr style="margin: 60px 0; border: 0; border-top: 1px solid #eee;">' : ''}
                 </section>
               `;
@@ -1920,7 +1979,7 @@ export default function App() {
                     onClick={() => {
                       setMainMode('default');
                       setConversionMode('inline-diagrams');
-                      setDiagramDetectionMode('auto');
+                      setDiagramDetectionMode('manual');
                     }}
                     className={cn(
                       "px-12 py-5 rounded-[32px] text-sm font-bold uppercase tracking-widest transition-all border-2 flex items-center gap-3",
@@ -1963,37 +2022,51 @@ export default function App() {
                         Page by Page
                       </button>
                       <button
-                        onClick={() => {
-                          setConversionMode('inline-diagrams');
-                          setDiagramDetectionMode('manual');
-                        }}
+                        onClick={() => setConversionMode('side-by-side')}
                         className={cn(
                           "px-8 py-3 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all border-2 flex items-center gap-2",
-                          conversionMode === 'inline-diagrams' && diagramDetectionMode === 'manual'
+                          conversionMode === 'side-by-side' 
                             ? "bg-white/20 text-white border-white/40 shadow-lg" 
                             : "bg-white/5 text-stone-500 border-white/10 hover:bg-white/10 hover:border-white/20"
                         )}
                       >
-                        {(conversionMode === 'inline-diagrams' && diagramDetectionMode === 'manual') && <CheckCircle2 className="w-4 h-4" />}
-                        Manual Diagram Selection
+                        {conversionMode === 'side-by-side' && <CheckCircle2 className="w-4 h-4" />}
+                        Side by Side
+                      </button>
+                      <button
+                        onClick={() => {
+                          setConversionMode('inline-diagrams');
+                          setDiagramDetectionMode('auto');
+                        }}
+                        className={cn(
+                          "px-8 py-3 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all border-2 flex items-center gap-2",
+                          conversionMode === 'inline-diagrams' && diagramDetectionMode === 'auto'
+                            ? "bg-white/20 text-white border-white/40 shadow-lg" 
+                            : "bg-white/5 text-stone-500 border-white/10 hover:bg-white/10 hover:border-white/20"
+                        )}
+                      >
+                        {(conversionMode === 'inline-diagrams' && diagramDetectionMode === 'auto') && <CheckCircle2 className="w-4 h-4" />}
+                        AI Auto Detect
                       </button>
                     </div>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-2 animate-in fade-in duration-500">
                     <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 rounded-full border border-emerald-500/20">
-                      <Wand2 className="w-3 h-3 text-emerald-400" />
-                      <span className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">Inline Diagrams with auto detect</span>
+                      <Edit3 className="w-3 h-3 text-emerald-400" />
+                      <span className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">Manual Diagram Selection</span>
                     </div>
                   </div>
                 )}
                 
                 <p className="text-stone-500 text-sm font-medium text-center max-w-lg italic">
                   {mainMode === 'default' 
-                    ? "Transcribes your notes while identifying and extracting diagrams to place them contextually inline with the text."
+                    ? "Manually select areas of your notes that contain diagrams to be extracted and placed inline (Recommended for accuracy)."
                     : conversionMode === 'transcription' 
                       ? "Strictly transcribes every word, formula, and symbol exactly as written in your notes, page by page, with notes followed by html." 
-                      : "Manually select areas of your notes that contain diagrams to be extracted and placed inline."}
+                      : conversionMode === 'side-by-side'
+                        ? "Creates a two-column layout with the original handwritten notes on the left and the accessible transcription on the right."
+                        : "Uses AI to automatically identify and extract diagrams to place them contextually inline with the text."}
                 </p>
               </div>
 
@@ -2357,11 +2430,11 @@ export default function App() {
                         </div>
                       )}
                       <div className={cn(
-                      "grid grid-cols-1 gap-16 items-start",
-                      conversionMode === 'transcription' ? "lg:grid-cols-12" : "lg:grid-cols-1"
-                    )}>
-                      {/* Original Thumbnail (Reference) - Only show in transcription mode */}
-                      {conversionMode === 'transcription' && (
+                        "grid grid-cols-1 gap-16 items-start",
+                        (conversionMode === 'transcription' || conversionMode === 'side-by-side') ? "lg:grid-cols-12" : "lg:grid-cols-1"
+                      )}>
+                      {/* Original Thumbnail (Reference) - Only show in transcription or side-by-side mode */}
+                      {(conversionMode === 'transcription' || conversionMode === 'side-by-side') && (
                         <div className="lg:col-span-4 space-y-6">
                           <div className="sticky top-48">
                             <div className="relative aspect-[3/4] overflow-hidden rounded-[32px] border-4 border-white/10 shadow-2xl">
@@ -2402,7 +2475,7 @@ export default function App() {
                       {/* Preview (Full Width Content) */}
                       <div className={cn(
                         "space-y-8",
-                        conversionMode === 'transcription' ? "lg:col-span-8" : "lg:col-span-12 max-w-4xl mx-auto w-full"
+                        (conversionMode === 'transcription' || conversionMode === 'side-by-side') ? "lg:col-span-8" : "lg:col-span-12 max-w-4xl mx-auto w-full"
                       )}>
                         <div className="flex items-center justify-between">
                           <h3 className="text-xl font-bold">Page {res.pageNumber}</h3>
