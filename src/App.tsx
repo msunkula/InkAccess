@@ -38,7 +38,8 @@ import {
   RefreshCw,
   Edit3,
   Copy,
-  X
+  X,
+  Sigma
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -721,13 +722,14 @@ const DiagramEditor = ({
   );
 };
 
-const RequestChangesSection = ({ onApplyChanges, isProcessing }: { onApplyChanges: (request: string) => void, isProcessing: boolean }) => {
+const RequestChangesSection = ({ onApplyChanges, isProcessing, totalPages }: { onApplyChanges: (request: string, pageNumber: number | 'all') => void, isProcessing: boolean, totalPages: number }) => {
   const [request, setRequest] = useState('');
+  const [targetPage, setTargetPage] = useState<number | 'all'>('all');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (request.trim()) {
-      onApplyChanges(request);
+      onApplyChanges(request, targetPage);
     }
   };
 
@@ -745,6 +747,39 @@ const RequestChangesSection = ({ onApplyChanges, isProcessing }: { onApplyChange
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="flex flex-col gap-4">
+            <label className="text-xs font-black uppercase tracking-widest text-stone-400">Apply to:</label>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setTargetPage('all')}
+                className={cn(
+                  "px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all border",
+                  targetPage === 'all' 
+                    ? "bg-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-500/20" 
+                    : "bg-white/5 text-stone-500 border-white/10 hover:bg-white/10"
+                )}
+              >
+                All Pages
+              </button>
+              {Array.from({ length: totalPages }).map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setTargetPage(i + 1)}
+                  className={cn(
+                    "px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all border",
+                    targetPage === i + 1 
+                      ? "bg-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-500/20" 
+                      : "bg-white/5 text-stone-500 border-white/10 hover:bg-white/10"
+                  )}
+                >
+                  Page {i + 1}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="space-y-4">
             <label className="text-xs font-black uppercase tracking-widest text-stone-400">What would you like to change?</label>
             <textarea
@@ -761,11 +796,13 @@ const RequestChangesSection = ({ onApplyChanges, isProcessing }: { onApplyChange
             className="w-full bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black uppercase tracking-widest py-4 rounded-2xl flex items-center justify-center gap-3 transition-all"
           >
             {isProcessing ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Wand2 className="w-5 h-5" />}
-            Apply Changes to All Pages
+            {targetPage === 'all' ? 'Apply Changes to All Pages' : `Apply Changes to Page ${targetPage}`}
           </button>
           
           <p className="text-center text-[10px] text-stone-500 uppercase tracking-widest font-bold">
-            This will re-process all pages using your specific instructions.
+            {targetPage === 'all' 
+              ? "This will re-process all pages using your specific instructions."
+              : `This will re-process only Page ${targetPage} using your specific instructions.`}
           </p>
         </form>
       </div>
@@ -1290,7 +1327,7 @@ export default function App() {
   const [viewMode, setViewMode] = useState<'preview' | 'code'>('preview');
   const [mainMode, setMainMode] = useState<'default' | 'customize'>('default');
   const [conversionMode, setConversionMode] = useState<'transcription' | 'inline-diagrams' | 'side-by-side'>('inline-diagrams');
-  const [diagramDetectionMode, setDiagramDetectionMode] = useState<'manual' | 'auto'>('auto');
+  const [diagramDetectionMode, setDiagramDetectionMode] = useState<'manual' | 'auto'>('manual');
   const [originalFileBase64, setOriginalFileBase64] = useState<string | null>(null);
   const [originalFile, setOriginalFile] = useState<File | null>(null);
   const [originalFileName, setOriginalFileName] = useState<string>('original_notes.pdf');
@@ -1299,6 +1336,19 @@ export default function App() {
   const [editingPage, setEditingPage] = useState<number | null>(null);
   const [editingHtml, setEditingHtml] = useState<string>('');
   const [isEditingModalOpen, setIsEditingModalOpen] = useState<boolean>(false);
+  const [modalViewMode, setModalViewMode] = useState<'editor' | 'preview' | 'split'>('split');
+  const modalPreviewRef = useRef<HTMLDivElement>(null);
+
+  const renderMathInModal = () => {
+    // @ts-ignore
+    if (window.MathJax && window.MathJax.typesetPromise && modalPreviewRef.current) {
+      setIsTypesetting(true);
+      // @ts-ignore
+      window.MathJax.typesetPromise([modalPreviewRef.current]).finally(() => {
+        setIsTypesetting(false);
+      });
+    }
+  };
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAutoDetectAll = async (targetPreviews?: PagePreview[]) => {
@@ -1674,7 +1724,7 @@ export default function App() {
     }
   };
 
-  const handleApplyChanges = async (userRequest: string) => {
+  const handleApplyChanges = async (userRequest: string, pageNumber: number | 'all' = 'all') => {
     if (results.length === 0) return;
 
     setIsProcessing(true);
@@ -1689,6 +1739,11 @@ export default function App() {
       const processPageEdit = async (index: number) => {
         const currentResult = updatedResults[index];
         
+        // Skip if we are targeting a specific page and this isn't it
+        if (pageNumber !== 'all' && currentResult.pageNumber !== pageNumber) {
+          return;
+        }
+
         const prompt = `
           You are an expert academic editor. Below is a page by page HTML transcription of a handwritten lecture notes page.
           
@@ -2558,7 +2613,8 @@ export default function App() {
 
               <RequestChangesSection 
                 isProcessing={isProcessing} 
-                onApplyChanges={(request) => handleApplyChanges(request)} 
+                totalPages={results.length}
+                onApplyChanges={(request, pageNumber) => handleApplyChanges(request, pageNumber)} 
               />
             </div>
           ) : (
@@ -2595,13 +2651,76 @@ export default function App() {
             </div>
             
             <div className="flex-1 p-8 overflow-hidden flex flex-col gap-6">
-              <div className="flex-1 bg-black/40 rounded-3xl border border-white/10 overflow-hidden">
-                <textarea
-                  value={editingHtml}
-                  onChange={(e) => setEditingHtml(e.target.value)}
-                  className="w-full h-full p-8 bg-transparent text-emerald-500 font-mono text-sm focus:outline-none resize-none leading-relaxed"
-                  spellCheck={false}
-                />
+              <div className="flex items-center gap-2 bg-white/5 p-1 rounded-2xl self-start">
+                <button
+                  onClick={() => setModalViewMode('editor')}
+                  className={cn(
+                    "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                    modalViewMode === 'editor' ? "bg-white/10 text-white" : "text-stone-500 hover:text-stone-300"
+                  )}
+                >
+                  Editor
+                </button>
+                <button
+                  onClick={() => setModalViewMode('split')}
+                  className={cn(
+                    "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                    modalViewMode === 'split' ? "bg-white/10 text-white" : "text-stone-500 hover:text-stone-300"
+                  )}
+                >
+                  Split
+                </button>
+                <button
+                  onClick={() => setModalViewMode('preview')}
+                  className={cn(
+                    "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                    modalViewMode === 'preview' ? "bg-white/10 text-white" : "text-stone-500 hover:text-stone-300"
+                  )}
+                >
+                  Preview
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {(modalViewMode === 'editor' || modalViewMode === 'split') && (
+                  <div className={cn(
+                    "bg-black/40 rounded-3xl border border-white/10 overflow-hidden flex flex-col",
+                    modalViewMode === 'editor' ? "lg:col-span-2" : ""
+                  )}>
+                    <textarea
+                      value={editingHtml}
+                      onChange={(e) => setEditingHtml(e.target.value)}
+                      className="w-full h-full p-8 bg-transparent text-white font-mono text-sm focus:outline-none resize-none leading-relaxed"
+                      spellCheck={false}
+                    />
+                  </div>
+                )}
+                
+                {(modalViewMode === 'preview' || modalViewMode === 'split') && (
+                  <div className={cn(
+                    "bg-white rounded-3xl overflow-hidden flex flex-col",
+                    modalViewMode === 'preview' ? "lg:col-span-2" : ""
+                  )}>
+                    <div className="p-4 border-b border-stone-100 flex items-center justify-between bg-stone-50">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Live Preview</span>
+                      <button
+                        onClick={renderMathInModal}
+                        disabled={isTypesetting}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg transition-all disabled:opacity-50"
+                      >
+                        {isTypesetting ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Sigma className="w-3 h-3" />}
+                        Render MathJax
+                      </button>
+                    </div>
+                    <div className="flex-1 overflow-auto p-8 text-black" ref={modalPreviewRef}>
+                      <style>{TEMPLATE_CSS}</style>
+                      <div 
+                        className="prose prose-stone max-w-none"
+                        dangerouslySetInnerHTML={{ __html: editingHtml }} 
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
               
               <div className="flex items-center justify-between gap-4">
