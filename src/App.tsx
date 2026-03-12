@@ -39,7 +39,11 @@ import {
   Edit3,
   Copy,
   X,
-  Sigma
+  Sigma,
+  BookOpen,
+  Accessibility,
+  Image as ImageIcon,
+  HelpCircle
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -114,6 +118,153 @@ interface PageResult {
 const Skeleton = ({ className }: { className?: string }) => (
   <div className={cn("animate-pulse bg-white/5 rounded-2xl", className)} />
 );
+
+const Documentation = ({ onClose }: { onClose: () => void }) => {
+  return (
+    <div className="fixed inset-0 z-[100] bg-stone-900/95 backdrop-blur-xl flex flex-col">
+      <div className="flex items-center justify-between p-6 border-b border-white/10 bg-black/40">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center border border-emerald-500/20">
+            <BookOpen className="w-5 h-5 text-emerald-500" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-white">InkAccess Documentation</h2>
+            <p className="text-xs text-stone-500">Learn how to create accessible lecture notes</p>
+          </div>
+        </div>
+        <button 
+          onClick={onClose}
+          className="p-3 hover:bg-white/10 rounded-full transition-colors text-stone-400 hover:text-white"
+        >
+          <X className="w-6 h-6" />
+        </button>
+      </div>
+      
+      <div className="flex-1 overflow-y-auto p-12">
+        <div className="max-w-4xl mx-auto space-y-16">
+          {/* Introduction */}
+          <section className="space-y-6">
+            <h3 className="text-3xl font-bold text-white tracking-tight">Welcome to InkAccess</h3>
+            <p className="text-stone-400 text-lg leading-relaxed">
+              InkAccess is a specialized tool designed for students and educators to transform handwritten lecture notes into semantic, WCAG 2.2 Level AA compliant HTML documents. It uses advanced AI to recognize handwriting, complex mathematical formulas (MathJax), and diagrams.
+            </p>
+          </section>
+
+          {/* Core Features */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-white/5 border border-white/10 p-8 rounded-[32px] space-y-4">
+              <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center border border-indigo-500/20">
+                <Wand2 className="w-6 h-6 text-indigo-500" />
+              </div>
+              <h4 className="text-xl font-bold">AI Transcription</h4>
+              <p className="text-stone-400 text-sm leading-relaxed">
+                Automatically converts handwriting into clean text while preserving academic structure like definitions, theorems, and examples.
+              </p>
+            </div>
+            <div className="bg-white/5 border border-white/10 p-8 rounded-[32px] space-y-4">
+              <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center border border-emerald-500/20">
+                <Sigma className="w-6 h-6 text-emerald-500" />
+              </div>
+              <h4 className="text-xl font-bold">MathJax Support</h4>
+              <p className="text-stone-400 text-sm leading-relaxed">
+                Recognizes complex LaTeX-style math formulas and renders them using MathJax for perfect accessibility and visual quality.
+              </p>
+            </div>
+            <div className="bg-white/5 border border-white/10 p-8 rounded-[32px] space-y-4">
+              <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center border border-amber-500/20">
+                <ImageIcon className="w-6 h-6 text-amber-500" />
+              </div>
+              <h4 className="text-xl font-bold">Diagram Extraction</h4>
+              <p className="text-stone-400 text-sm leading-relaxed">
+                Extracts diagrams from your notes and generates detailed AI-powered visual descriptions for screen readers.
+              </p>
+            </div>
+            <div className="bg-white/5 border border-white/10 p-8 rounded-[32px] space-y-4">
+              <div className="w-12 h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center border border-purple-500/20">
+                <Accessibility className="w-6 h-6 text-purple-500" />
+              </div>
+              <h4 className="text-xl font-bold">WCAG Compliance</h4>
+              <p className="text-stone-400 text-sm leading-relaxed">
+                Every document undergoes an automated accessibility audit to ensure it meets modern web standards.
+              </p>
+            </div>
+            <div className="bg-white/5 border border-white/10 p-8 rounded-[32px] space-y-4">
+              <div className="w-12 h-12 bg-pink-500/10 rounded-2xl flex items-center justify-center border border-pink-500/20">
+                <Edit3 className="w-6 h-6 text-pink-500" />
+              </div>
+              <h4 className="text-xl font-bold">Full Customization</h4>
+              <p className="text-stone-400 text-sm leading-relaxed">
+                Personalize your document with custom colors, fonts, and layouts. Preview the entire document before exporting.
+              </p>
+            </div>
+          </div>
+
+          {/* Conversion Modes */}
+          <section className="space-y-8">
+            <h3 className="text-2xl font-bold text-white">Conversion Modes</h3>
+            <div className="space-y-6">
+              <div className="flex gap-6">
+                <div className="shrink-0 w-12 h-12 bg-white/5 rounded-full flex items-center justify-center font-black text-emerald-500 border border-white/10">01</div>
+                <div className="space-y-2">
+                  <h5 className="text-lg font-bold">Default (Auto Diagram)</h5>
+                  <p className="text-stone-400 text-sm">The fastest way. AI automatically finds diagrams and places them inline with the transcribed text.</p>
+                </div>
+              </div>
+              <div className="flex gap-6">
+                <div className="shrink-0 w-12 h-12 bg-white/5 rounded-full flex items-center justify-center font-black text-emerald-500 border border-white/10">02</div>
+                <div className="space-y-2">
+                  <h5 className="text-lg font-bold">Manual Selection</h5>
+                  <p className="text-stone-400 text-sm">Recommended for complex notes. You manually select diagram areas to ensure perfect extraction and context.</p>
+                </div>
+              </div>
+              <div className="flex gap-6">
+                <div className="shrink-0 w-12 h-12 bg-white/5 rounded-full flex items-center justify-center font-black text-emerald-500 border border-white/10">03</div>
+                <div className="space-y-2">
+                  <h5 className="text-lg font-bold">Side-by-Side</h5>
+                  <p className="text-stone-400 text-sm">Creates a split view with the original image on the left and transcription on the right. Great for verification.</p>
+                </div>
+              </div>
+              <div className="flex gap-6">
+                <div className="shrink-0 w-12 h-12 bg-white/5 rounded-full flex items-center justify-center font-black text-emerald-500 border border-white/10">04</div>
+                <div className="space-y-2">
+                  <h5 className="text-lg font-bold">Page by Page</h5>
+                  <p className="text-stone-400 text-sm">Each page of the original image followed by its conversion. Ideal for direct comparison and verification.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Tips for Best Results */}
+          <section className="bg-emerald-500/5 border border-emerald-500/10 p-12 rounded-[48px] space-y-8">
+            <h3 className="text-2xl font-bold text-emerald-400">Tips for Best Results</h3>
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <li className="flex gap-3 text-stone-300 text-sm">
+                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                Use high-contrast ink (black or dark blue) on white paper.
+              </li>
+              <li className="flex gap-3 text-stone-300 text-sm">
+                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                Ensure the scan or photo is well-lit and not blurry.
+              </li>
+              <li className="flex gap-3 text-stone-300 text-sm">
+                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                Keep formulas on their own lines for better recognition.
+              </li>
+              <li className="flex gap-3 text-stone-300 text-sm">
+                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                Avoid overlapping text and diagrams if possible.
+              </li>
+            </ul>
+          </section>
+          
+          <footer className="py-12 text-center border-t border-white/10">
+            <p className="text-stone-500 text-xs font-black uppercase tracking-[0.3em]">InkAccess v1.0 • Built for Accessibility</p>
+          </footer>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const StylingPanel = ({ 
   options, 
@@ -1675,6 +1826,7 @@ export default function App() {
   const [isEditingModalOpen, setIsEditingModalOpen] = useState<boolean>(false);
   const [showFullPreview, setShowFullPreview] = useState<boolean>(false);
   const [showStylingPanel, setShowStylingPanel] = useState<boolean>(false);
+  const [showDocumentation, setShowDocumentation] = useState<boolean>(false);
   const [stylingOptions, setStylingOptions] = useState<StylingOptions>({
     primaryColor: '#3498db',
     fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
@@ -2347,7 +2499,16 @@ export default function App() {
             </div>
           </div>
 
-          {step === 'results' && (
+          <div className="flex items-center gap-6">
+            <button
+              onClick={() => setShowDocumentation(true)}
+              className="flex items-center gap-2 text-stone-400 hover:text-white transition-colors text-xs font-black uppercase tracking-widest"
+            >
+              <HelpCircle className="w-4 h-4" />
+              Documentation
+            </button>
+            
+            {step === 'results' && (
             <div className="flex items-center gap-4">
               <div className="flex flex-col items-end mr-4">
                 <label htmlFor="filename" className="text-[10px] font-bold uppercase tracking-widest text-stone-500 mb-1">File Name</label>
@@ -2384,6 +2545,7 @@ export default function App() {
               </button>
             </div>
           )}
+          </div>
         </div>
       </header>
 
@@ -2490,6 +2652,14 @@ export default function App() {
                         ? "Creates a two-column layout with the original handwritten notes on the left and the accessible transcription on the right."
                         : "Manually select areas of your notes that contain diagrams to be extracted and placed inline (Recommended for accuracy)."}
                 </p>
+
+                <button
+                  onClick={() => setShowDocumentation(true)}
+                  className="text-emerald-500 hover:text-emerald-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-colors mt-2"
+                >
+                  <HelpCircle className="w-3 h-3" />
+                  How it works & Best Practices
+                </button>
               </div>
 
               <div 
@@ -3109,6 +3279,10 @@ export default function App() {
           conversionMode={conversionMode}
           onClose={() => setShowFullPreview(false)} 
         />
+      )}
+
+      {showDocumentation && (
+        <Documentation onClose={() => setShowDocumentation(false)} />
       )}
 
       {/* HTML Editing Modal */}
