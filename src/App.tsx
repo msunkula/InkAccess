@@ -38,7 +38,8 @@ import {
   RefreshCw,
   Edit3,
   Copy,
-  X
+  X,
+  Sigma
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -65,6 +66,16 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+interface StylingOptions {
+  primaryColor: string;
+  fontFamily: string;
+  contentMaxWidth: string;
+  lineHeight: string;
+  fontSize: string;
+  sidebarBg: string;
+  sidebarText: string;
+}
+
 interface AccessibilityIssue {
   type: 'error' | 'warning';
   message: string;
@@ -82,6 +93,7 @@ interface ManualSelection {
   id: string;
   points: { x: number; y: number }[]; // Normalized 0-1000
   bounds: { xmin: number; ymin: number; xmax: number; ymax: number }; // Normalized 0-1000
+  alt?: string;
 }
 
 interface PagePreview {
@@ -102,6 +114,236 @@ interface PageResult {
 const Skeleton = ({ className }: { className?: string }) => (
   <div className={cn("animate-pulse bg-white/5 rounded-2xl", className)} />
 );
+
+const StylingPanel = ({ 
+  options, 
+  onUpdate 
+}: { 
+  options: StylingOptions; 
+  onUpdate: (updates: Partial<StylingOptions>) => void;
+}) => {
+  return (
+    <div className="bg-white/5 border border-white/10 rounded-[32px] p-8 space-y-8">
+      <div className="flex items-center gap-3 mb-2">
+        <Edit3 className="w-5 h-5 text-indigo-400" />
+        <h3 className="text-sm font-black uppercase tracking-widest text-white">Customize Document Styling</h3>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="space-y-3">
+          <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Primary Accent Color</label>
+          <div className="flex items-center gap-3">
+            <input 
+              type="color" 
+              value={options.primaryColor}
+              onChange={(e) => onUpdate({ primaryColor: e.target.value })}
+              className="w-10 h-10 rounded-lg bg-transparent border-none cursor-pointer"
+            />
+            <input 
+              type="text" 
+              value={options.primaryColor}
+              onChange={(e) => onUpdate({ primaryColor: e.target.value })}
+              className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-xs font-mono focus:outline-none focus:border-indigo-500/50"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Font Family</label>
+          <select 
+            value={options.fontFamily}
+            onChange={(e) => onUpdate({ fontFamily: e.target.value })}
+            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-xs focus:outline-none focus:border-indigo-500/50"
+          >
+            <option value="'Segoe UI', Tahoma, Geneva, Verdana, sans-serif">Modern Sans (Segoe UI)</option>
+            <option value="'Inter', sans-serif">Inter (Clean)</option>
+            <option value="Georgia, serif">Classic Serif (Georgia)</option>
+            <option value="'Courier New', Courier, monospace">Monospace (Courier)</option>
+            <option value="'Playfair Display', serif">Editorial (Playfair)</option>
+          </select>
+        </div>
+
+        <div className="space-y-3">
+          <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Content Max Width</label>
+          <select 
+            value={options.contentMaxWidth}
+            onChange={(e) => onUpdate({ contentMaxWidth: e.target.value })}
+            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-xs focus:outline-none focus:border-indigo-500/50"
+          >
+            <option value="700px">Narrow (700px)</option>
+            <option value="900px">Standard (900px)</option>
+            <option value="1100px">Wide (1100px)</option>
+            <option value="100%">Full Width</option>
+          </select>
+        </div>
+
+        <div className="space-y-3">
+          <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Base Font Size</label>
+          <div className="flex items-center gap-4">
+            <input 
+              type="range" 
+              min="12" 
+              max="24" 
+              value={parseInt(options.fontSize)}
+              onChange={(e) => onUpdate({ fontSize: `${e.target.value}px` })}
+              className="flex-1 accent-indigo-500"
+            />
+            <span className="text-xs font-mono text-stone-400 w-8">{options.fontSize}</span>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Line Height</label>
+          <div className="flex items-center gap-4">
+            <input 
+              type="range" 
+              min="1" 
+              max="2" 
+              step="0.1"
+              value={parseFloat(options.lineHeight)}
+              onChange={(e) => onUpdate({ lineHeight: e.target.value })}
+              className="flex-1 accent-indigo-500"
+            />
+            <span className="text-xs font-mono text-stone-400 w-8">{options.lineHeight}</span>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <label className="text-[10px] font-black uppercase tracking-widest text-stone-500">Sidebar Background</label>
+          <div className="flex items-center gap-3">
+            <input 
+              type="color" 
+              value={options.sidebarBg}
+              onChange={(e) => onUpdate({ sidebarBg: e.target.value })}
+              className="w-10 h-10 rounded-lg bg-transparent border-none cursor-pointer"
+            />
+            <input 
+              type="text" 
+              value={options.sidebarBg}
+              onChange={(e) => onUpdate({ sidebarBg: e.target.value })}
+              className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-xs font-mono focus:outline-none focus:border-indigo-500/50"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const FullDocumentPreview = ({ 
+  results, 
+  stylingOptions, 
+  conversionMode,
+  onClose
+}: { 
+  results: PageResult[]; 
+  stylingOptions: StylingOptions;
+  conversionMode: string;
+  onClose: () => void;
+}) => {
+  const previewRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // @ts-ignore
+    if (window.MathJax && window.MathJax.typesetPromise && previewRef.current) {
+      // @ts-ignore
+      window.MathJax.typesetPromise([previewRef.current]);
+    }
+  }, [results]);
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-stone-900/95 backdrop-blur-xl flex flex-col">
+      <div className="flex items-center justify-between p-6 border-b border-white/10 bg-black/40">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center border border-indigo-500/20">
+            <Eye className="w-5 h-5 text-indigo-500" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-white">Full Document Preview</h2>
+            <p className="text-xs text-stone-500">Viewing all {results.length} pages sequentially</p>
+          </div>
+        </div>
+        <button 
+          onClick={onClose}
+          className="p-3 hover:bg-white/10 rounded-full transition-colors text-stone-400 hover:text-white"
+        >
+          <X className="w-6 h-6" />
+        </button>
+      </div>
+      
+      <div className="flex-1 overflow-y-auto p-12 bg-stone-100" ref={previewRef}>
+        <div className="max-w-[900px] mx-auto space-y-12">
+          <style>{getTemplateCss(stylingOptions)}</style>
+          <style>{`
+            .visual-desc {
+              background-color: #f8f9fa !important;
+              border-left: 4px solid #6c757d !important;
+              padding: 1rem !important;
+              margin: 1.5rem 0 !important;
+              font-style: italic !important;
+              color: #4a5568 !important;
+            }
+            .page-separator {
+              border: 0;
+              border-top: 1px dashed #cbd5e0;
+              margin: 4rem 0;
+              position: relative;
+            }
+            .page-separator::after {
+              content: 'Page Break';
+              position: absolute;
+              top: -10px;
+              left: 50%;
+              transform: translateX(-50%);
+              background: #f1f5f9;
+              padding: 0 1rem;
+              font-size: 10px;
+              font-weight: 900;
+              text-transform: uppercase;
+              letter-spacing: 0.2em;
+              color: #94a3b8;
+            }
+          `}</style>
+          
+          {results.map((res, idx) => {
+            let pageHtml = res.htmlContent;
+            
+            // Replace placeholders for preview
+            if (conversionMode === 'inline-diagrams' && res.diagrams && res.diagrams.length > 0) {
+              res.diagrams.forEach(diag => {
+                const escapedAlt = diag.alt.replace(/"/g, '&quot;');
+                const imgHtml = `
+                  <div class="inline-diagram-container" style="width: ${diag.width}%; margin: 30px auto;">
+                    <img src="${diag.editedBase64}" alt="${escapedAlt}" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    ${diag.alt ? `
+                    <div class="visual-desc">
+                      <strong>Visual Description:</strong>
+                      <span>${diag.alt}</span>
+                    </div>` : ''}
+                  </div>
+                `;
+                const placeholderRegex = new RegExp(`<diagram-placeholder[^>]*id="${diag.id}"[^>]*>(?:.*?<\/diagram-placeholder>)?`, 'g');
+                pageHtml = pageHtml.replace(placeholderRegex, imgHtml);
+              });
+            }
+
+            return (
+              <div key={res.pageNumber} className="relative">
+                <div className="bg-white p-12 rounded-2xl shadow-xl border border-stone-200">
+                  <div className="mb-8 pb-4 border-b border-stone-100 flex justify-between items-center">
+                    <span className="text-xs font-black uppercase tracking-widest text-stone-400">Page {res.pageNumber}</span>
+                  </div>
+                  <div className="page-content" dangerouslySetInnerHTML={{ __html: pageHtml }} />
+                </div>
+                {idx < results.length - 1 && <hr className="page-separator" />}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const ManualDiagramSelector = ({ 
   pageImage, 
@@ -467,6 +709,34 @@ const ManualDiagramSelector = ({
           </button>
         ))}
       </div>
+
+      {selectedId && (
+        <div className="bg-white/5 p-4 rounded-xl border border-white/10 space-y-3 animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Type className="w-4 h-4 text-emerald-500" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Diagram Alt Text</span>
+            </div>
+            <button 
+              onClick={() => setSelectedId(null)}
+              className="text-[10px] font-bold uppercase tracking-widest text-stone-500 hover:text-white transition-colors"
+            >
+              Done
+            </button>
+          </div>
+          <textarea
+            value={selections.find(s => s.id === selectedId)?.alt || ''}
+            onChange={(e) => {
+              const updated = selections.map(s => 
+                s.id === selectedId ? { ...s, alt: e.target.value } : s
+              );
+              onUpdate(updated);
+            }}
+            placeholder="Describe this diagram (optional - AI will generate if left blank)..."
+            className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-sm text-white placeholder:text-stone-600 focus:outline-none focus:border-emerald-500/50 transition-colors min-h-[80px] resize-none"
+          />
+        </div>
+      )}
     </div>
   );
 };
@@ -704,32 +974,93 @@ const DiagramEditor = ({
         )}
       </div>
 
-      <div className="mt-6 space-y-2">
-        <div className="flex items-center gap-2 text-stone-400 mb-1">
-          <Type className="w-3 h-3" />
-          <span className="text-[10px] font-bold uppercase tracking-widest">Alt Text / Description</span>
+      <div className="mt-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-stone-500">
+            <Type className="w-4 h-4" />
+            <span className="text-xs font-black uppercase tracking-widest">Accessibility Description</span>
+          </div>
+          {diagram.alt && (
+            <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+              Description Active
+            </span>
+          )}
         </div>
+        
         <textarea
           value={diagram.alt}
           onChange={(e) => onUpdate({ alt: e.target.value })}
-          placeholder="Describe this diagram for accessibility..."
-          className="w-full bg-white border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500/50 transition-colors min-h-[80px] resize-none"
+          placeholder="Describe this diagram in detail (axes, labels, trends, etc.) for someone who cannot see it..."
+          className="w-full bg-white border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/50 transition-all min-h-[100px] shadow-inner"
         />
-        <p className="text-[10px] text-stone-400 italic">This text will appear directly under the image in the final document.</p>
+        
+        {diagram.alt && (
+          <div className="bg-stone-50 rounded-xl p-5 border border-stone-200/60 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-1 h-4 bg-emerald-500 rounded-full" />
+              <span className="text-[10px] font-black uppercase tracking-[0.15em] text-stone-400">Final Document Preview</span>
+            </div>
+            <div className="text-xs text-stone-600 leading-relaxed italic border-l-2 border-stone-300 pl-4">
+              <strong className="not-italic text-stone-800 uppercase text-[10px] tracking-wider block mb-1">Visual Description:</strong>
+              {diagram.alt}
+            </div>
+          </div>
+        )}
+        <p className="text-[10px] text-stone-400 leading-relaxed">
+          This description is mandatory for WCAG compliance. It will be rendered as a styled box directly below the image in your exported document.
+        </p>
       </div>
     </div>
   );
 };
 
-const RequestChangesSection = ({ onApplyChanges, isProcessing }: { onApplyChanges: (request: string) => void, isProcessing: boolean }) => {
+const RequestChangesSection = ({ 
+  onApplyChanges, 
+  isProcessing, 
+  totalPages,
+  initialPage = 'all',
+  compact = false
+}: { 
+  onApplyChanges: (request: string, pageNumber: number | 'all') => void, 
+  isProcessing: boolean, 
+  totalPages: number,
+  initialPage?: number | 'all',
+  compact?: boolean
+}) => {
   const [request, setRequest] = useState('');
+  const [targetPage, setTargetPage] = useState<number | 'all'>(initialPage);
+
+  useEffect(() => {
+    setTargetPage(initialPage);
+  }, [initialPage]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (request.trim()) {
-      onApplyChanges(request);
+      onApplyChanges(request, targetPage);
     }
   };
+
+  if (compact) {
+    return (
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <textarea
+          value={request}
+          onChange={(e) => setRequest(e.target.value)}
+          placeholder="What would you like to change on this page?"
+          className="w-full bg-white border border-white/10 rounded-2xl p-4 text-stone-900 placeholder:text-stone-500 focus:outline-none focus:border-indigo-500/50 transition-colors min-h-[100px] resize-none text-sm"
+        />
+        <button
+          type="submit"
+          disabled={!request.trim() || isProcessing}
+          className="w-full bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black uppercase tracking-widest py-3 rounded-xl flex items-center justify-center gap-3 transition-all text-xs"
+        >
+          {isProcessing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+          Apply Changes to Page {targetPage}
+        </button>
+      </form>
+    );
+  }
 
   return (
     <div className="bg-white/5 border border-white/10 rounded-[48px] p-12 mt-24">
@@ -745,13 +1076,46 @@ const RequestChangesSection = ({ onApplyChanges, isProcessing }: { onApplyChange
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="flex flex-col gap-4">
+            <label className="text-xs font-black uppercase tracking-widest text-stone-400">Apply to:</label>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setTargetPage('all')}
+                className={cn(
+                  "px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all border",
+                  targetPage === 'all' 
+                    ? "bg-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-500/20" 
+                    : "bg-white/5 text-stone-500 border-white/10 hover:bg-white/10"
+                )}
+              >
+                All Pages
+              </button>
+              {Array.from({ length: totalPages }).map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setTargetPage(i + 1)}
+                  className={cn(
+                    "px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all border",
+                    targetPage === i + 1 
+                      ? "bg-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-500/20" 
+                      : "bg-white/5 text-stone-500 border-white/10 hover:bg-white/10"
+                  )}
+                >
+                  Page {i + 1}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="space-y-4">
             <label className="text-xs font-black uppercase tracking-widest text-stone-400">What would you like to change?</label>
             <textarea
               value={request}
               onChange={(e) => setRequest(e.target.value)}
               placeholder="e.g., 'Correct the formula in the second paragraph', 'Extract the diagram at the bottom more clearly', 'Use a more formal tone'..."
-              className="w-full bg-white/5 border border-white/10 rounded-3xl p-6 text-white placeholder:text-stone-600 focus:outline-none focus:border-indigo-500/50 transition-colors min-h-[120px] resize-none"
+              className="w-full bg-white border border-white/10 rounded-3xl p-6 text-stone-900 placeholder:text-stone-500 focus:outline-none focus:border-indigo-500/50 transition-colors min-h-[120px] resize-none"
             />
           </div>
 
@@ -761,11 +1125,13 @@ const RequestChangesSection = ({ onApplyChanges, isProcessing }: { onApplyChange
             className="w-full bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black uppercase tracking-widest py-4 rounded-2xl flex items-center justify-center gap-3 transition-all"
           >
             {isProcessing ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Wand2 className="w-5 h-5" />}
-            Apply Changes to All Pages
+            {targetPage === 'all' ? 'Apply Changes to All Pages' : `Apply Changes to Page ${targetPage}`}
           </button>
           
           <p className="text-center text-[10px] text-stone-500 uppercase tracking-widest font-bold">
-            This will re-process all pages using your specific instructions.
+            {targetPage === 'all' 
+              ? "This will re-process all pages using your specific instructions."
+              : `This will re-process only Page ${targetPage} using your specific instructions.`}
           </p>
         </form>
       </div>
@@ -794,13 +1160,14 @@ const checkAccessibility = (html: string): AccessibilityIssue[] => {
 
   // Check for visual descriptions if diagrams are mentioned
   const text = doc.body.textContent?.toLowerCase() || '';
-  const hasDiagramKeywords = ['diagram', 'graph', 'chart', 'figure', 'illustration'].some(kw => text.includes(kw));
+  const hasDiagramKeywords = ['diagram', 'graph', 'chart', 'figure', 'illustration', 'sketch', 'drawing'].some(kw => text.includes(kw));
   const hasVisualDesc = doc.querySelector('.visual-desc') !== null;
+  const hasPlaceholders = doc.querySelector('diagram-placeholder') !== null;
   
-  if (hasDiagramKeywords && !hasVisualDesc) {
+  if (hasDiagramKeywords && !hasVisualDesc && !hasPlaceholders) {
     issues.push({
       type: 'warning',
-      message: 'Diagram keywords detected but no .visual-desc container found for accessibility.'
+      message: 'Diagram keywords detected but no .visual-desc container or diagram placeholder found for accessibility.'
     });
   }
 
@@ -863,7 +1230,7 @@ const runWcagCleanup = async (html: string, pageNumber: number): Promise<string>
     ${html}
     
     FIX THE FOLLOWING COMMON ISSUES:
-    1. Missing or poor alt text for images/diagrams.
+    1. Missing or poor alt text for images/diagrams. If you see a diagram, graph, or sketch, you MUST provide a detailed visual description in a <div class="visual-desc"> container immediately following it. This is MANDATORY.
     2. Incorrect heading structures (ensure a logical hierarchy, starting from h4 for this page chunk).
     3. Ensure all math is properly wrapped in \\( ... \\) or \\[ ... \\] for MathJax accessibility.
     4. Ensure semantic elements are used correctly (e.g., <strong> for emphasis, <table> for data).
@@ -872,7 +1239,8 @@ const runWcagCleanup = async (html: string, pageNumber: number): Promise<string>
     INSTRUCTIONS:
     - Return ONLY the cleaned HTML.
     - Do not include any markdown code blocks or explanations.
-    - Maintain all original content and formatting classes (.definition, .theorem, etc.).
+    - Maintain all original content, diagram placeholders, and formatting classes (.definition, .theorem, .visual-desc, .example, .important, .warning, .solution).
+    - CRITICAL: Do NOT remove or modify <diagram-placeholder> tags. Ensure their 'id' and 'alt' attributes remain EXACTLY as they are. If a placeholder is missing a detailed 'alt' attribute, fill it with a comprehensive description.
   `;
   
   try {
@@ -890,9 +1258,22 @@ const runWcagCleanup = async (html: string, pageNumber: number): Promise<string>
 const autoDetectDiagrams = async (imageBase64: string): Promise<ManualSelection[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
   const prompt = `
-    Identify all diagrams, charts, graphs, and illustrations on this handwritten lecture notes page.
-    Return the bounding boxes for each diagram in normalized coordinates [ymin, xmin, ymax, xmax] (0-1000).
-    Return ONLY a JSON array of objects with 'box_2d' property.
+    Identify all visual elements on this handwritten lecture notes page that are NOT standard text.
+    This includes:
+    - Diagrams, sketches, and drawings
+    - Mathematical graphs and coordinate systems (include axes and labels)
+    - Flowcharts and process diagrams
+    - Chemical structures and molecular models
+    - Circuit diagrams and logic gates
+    - Tables that are drawn by hand
+    
+    CRITICAL: The bounding box [ymin, xmin, ymax, xmax] must TIGHTLY encompass the entire visual element. 
+    - This MUST include all associated labels, axis titles, legends, and captions that are physically part of the diagram.
+    - If a diagram has a title above or a caption below, include it in the box.
+    - Be extremely precise. Do not cut off any part of the drawing or its labels.
+    - If multiple small diagrams are grouped together with a single label, treat them as one visual element.
+    
+    Return ONLY a JSON array of objects with 'box_2d' property in normalized coordinates (0-1000).
     Example: [{"box_2d": [100, 200, 300, 400]}]
   `;
   
@@ -946,18 +1327,19 @@ const autoDetectDiagrams = async (imageBase64: string): Promise<ManualSelection[
   }
 };
 
-const TEMPLATE_CSS = `
+const getTemplateCss = (options: StylingOptions) => `
     :root {
-        --primary-color: #3498db;
-        --sidebar-bg: #2c3e50;
-        --sidebar-text: #ecf0f1;
+        --primary-color: ${options.primaryColor};
+        --sidebar-bg: ${options.sidebarBg};
+        --sidebar-text: ${options.sidebarText};
         --sidebar-hover: #34495e;
-        --content-max-width: 900px;
+        --content-max-width: ${options.contentMaxWidth};
     }
 
     body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        line-height: 1.6;
+        font-family: ${options.fontFamily};
+        line-height: ${options.lineHeight};
+        font-size: ${options.fontSize};
         margin: 0;
         padding: 0;
         background-color: #f8f9fa;
@@ -1095,14 +1477,14 @@ const TEMPLATE_CSS = `
     
     h3 { 
         color: #2c3e50; 
-        border-bottom: 3px solid #3498db; 
+        border-bottom: 3px solid var(--primary-color); 
         padding-bottom: 8px;
         margin-top: 30px;
         font-size: 1.5em;
     }
     h4 { 
         color: #34495e; 
-        border-left: 4px solid #3498db;
+        border-left: 4px solid var(--primary-color);
         padding-left: 15px;
         margin-top: 25px;
         font-size: 1.3em;
@@ -1137,7 +1519,7 @@ const TEMPLATE_CSS = `
         border: 1px solid #6c757d;
         border-radius: 8px;
         margin: 15px 0;
-        border-left: 5px solid #007bff;
+        border-left: 5px solid var(--primary-color);
     }
     
     .important {
@@ -1245,7 +1627,7 @@ const TEMPLATE_CSS = `
     hr {
         margin: 40px 0;
         border: none;
-        border-top: 2px solid #3498db;
+        border-top: 2px solid var(--primary-color);
     }
     
     table {
@@ -1288,8 +1670,33 @@ export default function App() {
   const [customFileName, setCustomFileName] = useState<string>('');
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [editingPage, setEditingPage] = useState<number | null>(null);
+  const [pageRequestingChanges, setPageRequestingChanges] = useState<number | null>(null);
   const [editingHtml, setEditingHtml] = useState<string>('');
   const [isEditingModalOpen, setIsEditingModalOpen] = useState<boolean>(false);
+  const [showFullPreview, setShowFullPreview] = useState<boolean>(false);
+  const [showStylingPanel, setShowStylingPanel] = useState<boolean>(false);
+  const [stylingOptions, setStylingOptions] = useState<StylingOptions>({
+    primaryColor: '#3498db',
+    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    contentMaxWidth: '900px',
+    lineHeight: '1.6',
+    fontSize: '16px',
+    sidebarBg: '#2c3e50',
+    sidebarText: '#ecf0f1',
+  });
+  const [modalViewMode, setModalViewMode] = useState<'editor' | 'preview' | 'split'>('split');
+  const modalPreviewRef = useRef<HTMLDivElement>(null);
+
+  const renderMathInModal = () => {
+    // @ts-ignore
+    if (window.MathJax && window.MathJax.typesetPromise && modalPreviewRef.current) {
+      setIsTypesetting(true);
+      // @ts-ignore
+      window.MathJax.typesetPromise([modalPreviewRef.current]).finally(() => {
+        setIsTypesetting(false);
+      });
+    }
+  };
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAutoDetectAll = async (targetPreviews?: PagePreview[]) => {
@@ -1490,22 +1897,26 @@ export default function App() {
           CRITICAL REQUIREMENT: The output HTML must be a PAGE BY PAGE transcription. It should NOT deviate from the original handwritten notes in terms of content, structure, or sequence. Do not summarize, omit, or add information that isn't in the image.
           
           Key Requirements:
-          1. Use proper MathJax delimiters: \\(inline math\\) and \\[display math\\]
-          2. Maintain semantic HTML structure with proper heading hierarchy (start at h4 for major topics within this page).
-          3. Apply appropriate color-coded containers:
+          1. VISUAL DESCRIPTIONS (MANDATORY): For EVERY diagram, graph, sketch, or visual element found on the page, you MUST provide a detailed visual description inside a <div class="visual-desc"> container. 
+             - Start the description with a bold header: <strong>Visual Description:</strong>
+             - Be extremely detailed. Explain axes, trends, labels, and relationships.
+             - This is CRITICAL for accessibility. Every visual element MUST have a corresponding description.
+          2. Use proper MathJax delimiters: \\(inline math\\) and \\[display math\\]
+          3. Maintain semantic HTML structure with proper heading hierarchy (start at h4 for major topics within this page).
+          4. Apply appropriate color-coded containers:
              - <div class="definition"> for definitions
              - <div class="theorem"> for theorems/laws
              - <div class="example"> for examples
              - <div class="important"> for key notes
              - <div class="warning"> for warnings
              - <div class="solution"> for example solutions
-             - <div class="visual-desc"> for detailed visual descriptions of any diagrams or graphs found on the page.
-          4. Preserve all worked examples with step-by-step solutions exactly as written.
-          5. Keep natural paragraph flow - avoid excessive bullet points unless they are in the original notes.
-          6. Use tables only for structured data.
-          7. Bold only for critical terms (Definition:, Theorem:, etc.).
-          8. Maintain academic tone and precision.
-          9. Return ONLY the HTML content that would go inside a <div class="page-content"> tag. Do not include the <div> tag itself or any markdown code blocks.
+             - <div class="visual-desc"> for detailed visual descriptions (as mentioned in point 1).
+          5. Preserve all worked examples with step-by-step solutions exactly as written.
+          6. Keep natural paragraph flow - avoid excessive bullet points unless they are in the original notes.
+          7. Use tables only for structured data.
+          8. Bold only for critical terms (Definition:, Theorem:, etc.).
+          9. Maintain academic tone and precision.
+          10. Return ONLY the HTML content that would go inside a <div class="page-content"> tag. Do not include the <div> tag itself or any markdown code blocks.
         `;
 
         const inlineDiagramsPrompt = `
@@ -1513,12 +1924,24 @@ export default function App() {
           
           CRITICAL REQUIREMENT: The output HTML must be a PAGE BY PAGE transcription, identical in content and structure to the original notes. 
           
-          DIAGRAM PLACEMENT: 
+          DIAGRAM PLACEMENT (MANDATORY): 
           I have manually identified ${selections.length} diagrams on this page at the following normalized coordinates [ymin, xmin, ymax, xmax] (0-1000):
-          ${selections.map((s, idx) => `diag-${idx}: [${s.bounds.ymin}, ${s.bounds.xmin}, ${s.bounds.ymax}, ${s.bounds.xmax}]`).join('\n')}
+          ${selections.map((s, idx) => `diag-${idx}: [${s.bounds.ymin}, ${s.bounds.xmin}, ${s.bounds.ymax}, ${s.bounds.xmax}] ${s.alt ? `(User Provided Alt: ${s.alt})` : ''}`).join('\n')}
 
-          In the HTML output, place a special tag <diagram-placeholder id="diag-N" ymin="Y1" xmin="X1" ymax="Y2" xmax="X2" alt="Detailed description of the diagram"></diagram-placeholder> exactly where each diagram appears in the notes.
+          In the HTML output, you MUST place a special tag <diagram-placeholder id="diag-N" ymin="Y1" xmin="X1" ymax="Y2" xmax="X2" alt="Detailed description of the diagram"></diagram-placeholder> exactly where each diagram appears in the notes.
           Use the IDs provided (diag-0, diag-1, etc.) and the coordinates I gave you.
+          
+          ALT TEXT GUIDELINES (CRITICAL FOR ACCESSIBILITY):
+          - MANDATORY: The 'alt' attribute MUST NOT be empty. You MUST provide a comprehensive, high-fidelity description for every diagram.
+          - If a 'User Provided Alt' is given, use it as a starting point but expand it into a full technical description.
+          - If NO 'User Provided Alt' is given, you MUST generate a complete description from scratch based on the visual content.
+          - Identify the type of diagram (e.g., "Line graph showing...", "Flowchart of...").
+          - Describe the main components, their spatial relationships, and their significance.
+          - For graphs: Explicitly state the X and Y axis labels, the units, the range of data, and describe the specific trend or key data points (e.g., "The curve peaks at x=5, y=10").
+          - For flowcharts: Describe every node and every connecting arrow/path in sequence.
+          - For chemical/circuit diagrams: List every element and how they are connected.
+          - Include ALL text, labels, or formulas that are part of the diagram itself.
+          - Aim for a description that allows a visually impaired student to fully understand the educational content of the diagram.
           
           Key Requirements:
           1. Use proper MathJax delimiters: \\(inline math\\) and \\[display math\\]
@@ -1530,13 +1953,14 @@ export default function App() {
              - <div class="important"> for key notes
              - <div class="warning"> for warnings
              - <div class="solution"> for example solutions
-             - <div class="visual-desc"> for detailed visual descriptions of any diagrams or graphs found on the page.
-          4. Preserve all worked examples with step-by-step solutions exactly as written.
-          5. Keep natural paragraph flow - avoid excessive bullet points unless they are in the original notes.
-          6. Use tables only for structured data.
-          7. Bold only for critical terms (Definition:, Theorem:, etc.).
-          8. Maintain academic tone and precision.
-          9. Return ONLY the HTML content that would go inside a <div class="page-content"> tag. Do not include the <div> tag itself or any markdown code blocks.
+          4. NO VISUAL DESCRIPTION DIV: Do NOT include a separate <div class="visual-desc"> for diagrams that have a <diagram-placeholder>. The detailed description MUST be contained entirely within the 'alt' attribute of the placeholder tag. This text will be automatically rendered as a visible, styled description below the image in the final document.
+          5. Preserve all worked examples with step-by-step solutions exactly as written.
+          6. Keep natural paragraph flow - avoid excessive bullet points unless they are in the original notes.
+          7. Use tables only for structured data.
+          8. Bold only for critical terms (Definition:, Theorem:, etc.).
+          9. Maintain academic tone and precision.
+          10. Return ONLY the HTML content that would go inside a <div class="page-content"> tag. Do not include the <div> tag itself or any markdown code blocks.
+          11. IMPORTANT: Ensure EVERY diagram identified above has a corresponding <diagram-placeholder> in your output. Do not skip any.
         `;
 
         const prompt = (conversionMode === 'transcription' || conversionMode === 'side-by-side') ? transcriptionPrompt : inlineDiagramsPrompt;
@@ -1579,7 +2003,11 @@ export default function App() {
 
             if (selection) {
               const { xmin, ymin, xmax, ymax } = selection.bounds;
-              const alt = placeholder.getAttribute('alt') || 'Diagram from notes';
+              // Check both alt attribute and inner text for the description
+              const altAttr = placeholder.getAttribute('alt');
+              const innerText = placeholder.textContent?.trim();
+              const alt = altAttr || innerText || selection.alt || 'Diagram from notes';
+              
               const id = `diag-${Math.random().toString(36).substr(2, 9)}`;
 
               const cropCanvas = document.createElement('canvas');
@@ -1656,7 +2084,7 @@ export default function App() {
     }
   };
 
-  const handleApplyChanges = async (userRequest: string) => {
+  const handleApplyChanges = async (userRequest: string, pageNumber: number | 'all' = 'all') => {
     if (results.length === 0) return;
 
     setIsProcessing(true);
@@ -1671,6 +2099,11 @@ export default function App() {
       const processPageEdit = async (index: number) => {
         const currentResult = updatedResults[index];
         
+        // Skip if we are targeting a specific page and this isn't it
+        if (pageNumber !== 'all' && currentResult.pageNumber !== pageNumber) {
+          return;
+        }
+
         const prompt = `
           You are an expert academic editor. Below is a page by page HTML transcription of a handwritten lecture notes page.
           
@@ -1683,9 +2116,10 @@ export default function App() {
           1. Apply the user's request to the HTML content.
           2. Maintain the existing page by page transcription quality.
           3. DO NOT remove or modify any <diagram-placeholder> tags unless specifically requested.
-          4. Preserve all MathJax formatting (\\( ... \\) and \\[ ... \\]).
-          5. Keep the semantic structure (headings, color-coded divs like .definition, .theorem, etc.).
-          6. Return ONLY the updated HTML content that goes inside the page container. Do not include markdown code blocks.
+          4. Ensure every diagram has a detailed visual description. If missing, add one in a <div class="visual-desc"> or update the 'alt' attribute of the placeholder.
+          5. Preserve all MathJax formatting (\\( ... \\) and \\[ ... \\]).
+          6. Keep the semantic structure (headings, color-coded divs like .definition, .theorem, etc.).
+          7. Return ONLY the updated HTML content that goes inside the page container. Do not include markdown code blocks.
         `;
 
         const response = await ai.models.generateContent({
@@ -1752,7 +2186,7 @@ export default function App() {
     </script>
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" crossorigin="anonymous"></script>
     <style>
-        ${TEMPLATE_CSS}
+        ${getTemplateCss(stylingOptions)}
     </style>
 </head>
 <body>
@@ -1786,11 +2220,17 @@ export default function App() {
               let pageHtml = res.htmlContent;
               
               // Replace placeholders with actual edited images for the download
-              if (conversionMode === 'inline-diagrams' && res.diagrams) {
+              if (conversionMode === 'inline-diagrams' && res.diagrams && res.diagrams.length > 0) {
                 res.diagrams.forEach(diag => {
+                  const escapedAlt = diag.alt.replace(/"/g, '&quot;');
                   const imgHtml = `
-                    <div class="inline-diagram-container" style="width: ${diag.width}%; margin-left: auto; margin-right: auto;">
-                      <img src="${diag.editedBase64}" alt="${diag.alt}">
+                    <div class="inline-diagram-container" style="width: ${diag.width}%; margin-left: auto; margin-right: auto; margin-top: 30px; margin-bottom: 30px;">
+                      <img src="${diag.editedBase64}" alt="${escapedAlt}" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                      ${diag.alt ? `
+                      <div class="visual-desc" style="text-align: left; font-size: 0.9em; margin-top: 15px; padding: 15px; background-color: #f8f9fa; border-left: 5px solid #6c757d; border-radius: 4px;">
+                        <strong style="display: block; margin-bottom: 5px; text-transform: uppercase; font-size: 0.75em; letter-spacing: 0.05em; color: #4a5568;">Visual Description:</strong>
+                        <span style="color: #2d3748; line-height: 1.5;">${diag.alt}</span>
+                      </div>` : ''}
                     </div>
                   `;
                   // Use a more robust replacement that handles both self-closing and separate tags
@@ -2028,7 +2468,7 @@ export default function App() {
                         )}
                       >
                         {(conversionMode === 'inline-diagrams' && diagramDetectionMode === 'manual') && <CheckCircle2 className="w-4 h-4" />}
-                        Manual Diagram Selection
+                        Manual Selection
                       </button>
                     </div>
                   </div>
@@ -2036,19 +2476,19 @@ export default function App() {
                   <div className="flex flex-col items-center gap-2 animate-in fade-in duration-500">
                     <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 rounded-full border border-emerald-500/20">
                       <Wand2 className="w-3 h-3 text-emerald-400" />
-                      <span className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">Inline Diagrams with auto detect</span>
+                      <span className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">AI Auto Diagram Detection</span>
                     </div>
                   </div>
                 )}
                 
                 <p className="text-stone-500 text-sm font-medium text-center max-w-lg italic">
                   {mainMode === 'default' 
-                    ? "Transcribes your notes while identifying and extracting diagrams to place them contextually inline with the text."
+                    ? "Uses AI to automatically identify and extract diagrams to place them contextually inline with the text (Fast & Automated)."
                     : conversionMode === 'transcription' 
                       ? "Strictly transcribes every word, formula, and symbol exactly as written in your notes, page by page, with notes followed by html." 
                       : conversionMode === 'side-by-side'
                         ? "Creates a two-column layout with the original handwritten notes on the left and the accessible transcription on the right."
-                        : "Manually select areas of your notes that contain diagrams to be extracted and placed inline."}
+                        : "Manually select areas of your notes that contain diagrams to be extracted and placed inline (Recommended for accuracy)."}
                 </p>
               </div>
 
@@ -2328,8 +2768,39 @@ export default function App() {
                     <Code className="w-4 h-4" aria-hidden="true" />
                     Note HTML
                   </button>
+                  <div className="w-px h-8 bg-white/10 mx-2" />
+                  <button
+                    onClick={() => setShowFullPreview(true)}
+                    className="flex items-center gap-2 px-8 py-2.5 rounded-full text-sm font-bold uppercase tracking-widest transition-all text-stone-500 hover:text-stone-300 hover:bg-white/5"
+                  >
+                    <Maximize2 className="w-4 h-4" aria-hidden="true" />
+                    Preview All
+                  </button>
                 </div>
               </div>
+
+              {/* Styling Options Toggle */}
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowStylingPanel(!showStylingPanel)}
+                  className={cn(
+                    "flex items-center gap-2 px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border",
+                    showStylingPanel 
+                      ? "bg-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-500/20" 
+                      : "bg-white/5 text-stone-500 border-white/10 hover:bg-white/10"
+                  )}
+                >
+                  <Edit3 className="w-3 h-3" />
+                  {showStylingPanel ? 'Hide Styling' : 'Customize Styling'}
+                </button>
+              </div>
+
+              {showStylingPanel && (
+                <StylingPanel 
+                  options={stylingOptions} 
+                  onUpdate={(updates) => setStylingOptions(prev => ({ ...prev, ...updates }))} 
+                />
+              )}
 
               {/* Math Rendering Status & Export Section */}
               <div className="flex flex-col md:flex-row gap-8 items-start justify-between bg-white/5 rounded-[32px] p-8 border border-white/10">
@@ -2464,6 +2935,24 @@ export default function App() {
                           <div className="flex items-center gap-3">
                             <button
                               onClick={() => {
+                                if (pageRequestingChanges === res.pageNumber) {
+                                  setPageRequestingChanges(null);
+                                } else {
+                                  setPageRequestingChanges(res.pageNumber);
+                                }
+                              }}
+                              className={cn(
+                                "flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest rounded-full border transition-all",
+                                pageRequestingChanges === res.pageNumber
+                                  ? "bg-indigo-500 text-white border-indigo-400"
+                                  : "bg-white/5 hover:bg-white/10 text-stone-400 hover:text-white border-white/10"
+                              )}
+                            >
+                              <Wand2 className="w-4 h-4" />
+                              Ask AI
+                            </button>
+                            <button
+                              onClick={() => {
                                 setEditingPage(res.pageNumber);
                                 setEditingHtml(res.htmlContent);
                                 setIsEditingModalOpen(true);
@@ -2475,7 +2964,25 @@ export default function App() {
                             </button>
                             <button
                               onClick={() => {
-                                navigator.clipboard.writeText(res.htmlContent);
+                                let pageHtml = res.htmlContent;
+                                if (conversionMode === 'inline-diagrams' && res.diagrams && res.diagrams.length > 0) {
+                                  res.diagrams.forEach(diag => {
+                                    const escapedAlt = diag.alt.replace(/"/g, '&quot;');
+                                    const imgHtml = `
+                                      <div class="inline-diagram-container" style="width: ${diag.width}%; margin-left: auto; margin-right: auto; margin-top: 30px; margin-bottom: 30px;">
+                                        <img src="${diag.editedBase64}" alt="${escapedAlt}" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                                        ${diag.alt ? `
+                                        <div class="visual-desc" style="text-align: left; font-size: 0.9em; margin-top: 15px; padding: 15px; background-color: #f8f9fa; border-left: 5px solid #6c757d; border-radius: 4px;">
+                                          <strong style="display: block; margin-bottom: 5px; text-transform: uppercase; font-size: 0.75em; letter-spacing: 0.05em; color: #4a5568;">Visual Description:</strong>
+                                          <span style="color: #2d3748; line-height: 1.5;">${diag.alt}</span>
+                                        </div>` : ''}
+                                      </div>
+                                    `;
+                                    const placeholderRegex = new RegExp(`<diagram-placeholder[^>]*id="${diag.id}"[^>]*>(?:.*?<\/diagram-placeholder>)?`, 'g');
+                                    pageHtml = pageHtml.replace(placeholderRegex, imgHtml);
+                                  });
+                                }
+                                navigator.clipboard.writeText(pageHtml);
                               }}
                               className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-stone-400 hover:text-white text-xs font-black uppercase tracking-widest rounded-full border border-white/10 transition-all"
                             >
@@ -2484,10 +2991,50 @@ export default function App() {
                             </button>
                           </div>
                         </div>
+
+                        {pageRequestingChanges === res.pageNumber && (
+                          <div className="animate-in fade-in slide-in-from-top-4 duration-300">
+                            <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-[32px] p-8 mb-8">
+                              <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                  <Wand2 className="w-5 h-5 text-indigo-500" />
+                                  <h4 className="text-lg font-bold text-white">Refine Page {res.pageNumber}</h4>
+                                </div>
+                                <button 
+                                  onClick={() => setPageRequestingChanges(null)}
+                                  className="text-stone-500 hover:text-white transition-colors"
+                                >
+                                  <X className="w-5 h-5" />
+                                </button>
+                              </div>
+                              <RequestChangesSection 
+                                isProcessing={isProcessing} 
+                                totalPages={results.length}
+                                initialPage={res.pageNumber}
+                                compact={true}
+                                onApplyChanges={(request, pageNumber) => {
+                                  handleApplyChanges(request, pageNumber);
+                                  setPageRequestingChanges(null);
+                                }} 
+                              />
+                            </div>
+                          </div>
+                        )}
+
                         <div className="bg-white rounded-[40px] overflow-hidden text-black min-h-[1000px] shadow-[0_0_100px_rgba(0,0,0,0.5)]">
                           {viewMode === 'preview' ? (
                             <div className="p-16">
-                              <style>{TEMPLATE_CSS}</style>
+                              <style>{getTemplateCss(stylingOptions)}</style>
+                              <style>{`
+                                .visual-desc {
+                                  background-color: #f8f9fa !important;
+                                  border-left: 4px solid #6c757d !important;
+                                  padding: 1rem !important;
+                                  margin: 1.5rem 0 !important;
+                                  font-style: italic !important;
+                                  color: #4a5568 !important;
+                                }
+                              `}</style>
                               {conversionMode === 'inline-diagrams' ? (
                                 // Render content with interactive diagram editors
                                 res.htmlContent.split(/(<diagram-placeholder[^>]*>.*?<\/diagram-placeholder>|<diagram-placeholder[^>]*\/>)/g).map((part, idx) => {
@@ -2540,7 +3087,8 @@ export default function App() {
 
               <RequestChangesSection 
                 isProcessing={isProcessing} 
-                onApplyChanges={(request) => handleApplyChanges(request)} 
+                totalPages={results.length}
+                onApplyChanges={(request, pageNumber) => handleApplyChanges(request, pageNumber)} 
               />
             </div>
           ) : (
@@ -2553,6 +3101,15 @@ export default function App() {
           )}
         </div>
       </main>
+
+      {showFullPreview && (
+        <FullDocumentPreview 
+          results={results} 
+          stylingOptions={stylingOptions} 
+          conversionMode={conversionMode}
+          onClose={() => setShowFullPreview(false)} 
+        />
+      )}
 
       {/* HTML Editing Modal */}
       {isEditingModalOpen && (
@@ -2577,13 +3134,76 @@ export default function App() {
             </div>
             
             <div className="flex-1 p-8 overflow-hidden flex flex-col gap-6">
-              <div className="flex-1 bg-black/40 rounded-3xl border border-white/10 overflow-hidden">
-                <textarea
-                  value={editingHtml}
-                  onChange={(e) => setEditingHtml(e.target.value)}
-                  className="w-full h-full p-8 bg-transparent text-emerald-500 font-mono text-sm focus:outline-none resize-none leading-relaxed"
-                  spellCheck={false}
-                />
+              <div className="flex items-center gap-2 bg-white/5 p-1 rounded-2xl self-start">
+                <button
+                  onClick={() => setModalViewMode('editor')}
+                  className={cn(
+                    "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                    modalViewMode === 'editor' ? "bg-white/10 text-white" : "text-stone-500 hover:text-stone-300"
+                  )}
+                >
+                  Editor
+                </button>
+                <button
+                  onClick={() => setModalViewMode('split')}
+                  className={cn(
+                    "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                    modalViewMode === 'split' ? "bg-white/10 text-white" : "text-stone-500 hover:text-stone-300"
+                  )}
+                >
+                  Split
+                </button>
+                <button
+                  onClick={() => setModalViewMode('preview')}
+                  className={cn(
+                    "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                    modalViewMode === 'preview' ? "bg-white/10 text-white" : "text-stone-500 hover:text-stone-300"
+                  )}
+                >
+                  Preview
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {(modalViewMode === 'editor' || modalViewMode === 'split') && (
+                  <div className={cn(
+                    "bg-black/40 rounded-3xl border border-white/10 overflow-hidden flex flex-col",
+                    modalViewMode === 'editor' ? "lg:col-span-2" : ""
+                  )}>
+                    <textarea
+                      value={editingHtml}
+                      onChange={(e) => setEditingHtml(e.target.value)}
+                      className="w-full h-full p-8 bg-transparent text-white font-mono text-sm focus:outline-none resize-none leading-relaxed"
+                      spellCheck={false}
+                    />
+                  </div>
+                )}
+                
+                {(modalViewMode === 'preview' || modalViewMode === 'split') && (
+                  <div className={cn(
+                    "bg-white rounded-3xl overflow-hidden flex flex-col",
+                    modalViewMode === 'preview' ? "lg:col-span-2" : ""
+                  )}>
+                    <div className="p-4 border-b border-stone-100 flex items-center justify-between bg-stone-50">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Live Preview</span>
+                      <button
+                        onClick={renderMathInModal}
+                        disabled={isTypesetting}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg transition-all disabled:opacity-50"
+                      >
+                        {isTypesetting ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Sigma className="w-3 h-3" />}
+                        Render MathJax
+                      </button>
+                    </div>
+                    <div className="flex-1 overflow-auto p-8 text-black" ref={modalPreviewRef}>
+                      <style>{getTemplateCss(stylingOptions)}</style>
+                      <div 
+                        className="prose prose-stone max-w-none"
+                        dangerouslySetInnerHTML={{ __html: editingHtml }} 
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
               
               <div className="flex items-center justify-between gap-4">
