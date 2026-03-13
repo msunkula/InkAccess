@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import * as pdfjsLib from 'pdfjs-dist';
 // @ts-ignore
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
@@ -43,7 +43,8 @@ import {
   BookOpen,
   Accessibility,
   Image as ImageIcon,
-  HelpCircle
+  HelpCircle,
+  AlertTriangle
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -129,7 +130,7 @@ const Documentation = ({ onClose }: { onClose: () => void }) => {
           </div>
           <div>
             <h2 className="text-lg font-bold text-white">InkAccess Documentation</h2>
-            <p className="text-xs text-stone-500">Learn how to create accessible lecture notes</p>
+            <p className="text-xs text-stone-500">v2.5.0 • Learn how to create accessible lecture notes</p>
           </div>
         </div>
         <button 
@@ -144,10 +145,19 @@ const Documentation = ({ onClose }: { onClose: () => void }) => {
         <div className="max-w-4xl mx-auto space-y-16">
           {/* Introduction */}
           <section className="space-y-6">
-            <h3 className="text-3xl font-bold text-white tracking-tight">Welcome to InkAccess</h3>
+            <h3 className="text-3xl font-bold text-white tracking-tight">Welcome to InkAccess v2.5.0</h3>
             <p className="text-stone-400 text-lg leading-relaxed">
               InkAccess is a specialized tool designed for students and educators to transform handwritten lecture notes into semantic, WCAG 2.2 Level AA compliant HTML documents. It uses advanced AI to recognize handwriting, complex mathematical formulas (MathJax), and diagrams.
             </p>
+            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl">
+              <p className="text-red-400 text-sm font-bold flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                Important Note on Accuracy
+              </p>
+              <p className="text-red-400/80 text-xs mt-1">
+                The "Default" mode is optimized for extreme speed and uses a lighter AI model. While fast, it has the **highest chance of making mistakes** in transcription or diagram placement. For critical academic work, always choose a **Customize** option for significantly higher accuracy.
+              </p>
+            </div>
           </section>
 
           {/* Core Features */}
@@ -188,47 +198,92 @@ const Documentation = ({ onClose }: { onClose: () => void }) => {
                 Every document undergoes an automated accessibility audit to ensure it meets modern web standards.
               </p>
             </div>
-            <div className="bg-white/5 border border-white/10 p-8 rounded-[32px] space-y-4">
-              <div className="w-12 h-12 bg-pink-500/10 rounded-2xl flex items-center justify-center border border-pink-500/20">
-                <Edit3 className="w-6 h-6 text-pink-500" />
-              </div>
-              <h4 className="text-xl font-bold">Full Customization</h4>
-              <p className="text-stone-400 text-sm leading-relaxed">
-                Personalize your document with custom colors, fonts, and layouts. Preview the entire document before exporting.
-              </p>
-            </div>
           </div>
 
-          {/* Conversion Modes */}
-          <section className="space-y-8">
-            <h3 className="text-2xl font-bold text-white">Conversion Modes</h3>
-            <div className="space-y-6">
-              <div className="flex gap-6">
-                <div className="shrink-0 w-12 h-12 bg-white/5 rounded-full flex items-center justify-center font-black text-emerald-500 border border-white/10">01</div>
-                <div className="space-y-2">
-                  <h5 className="text-lg font-bold">Default (Auto Diagram)</h5>
-                  <p className="text-stone-400 text-sm">The fastest way. AI automatically finds diagrams and places them inline with the transcribed text.</p>
+          {/* Detailed Mode Breakdown */}
+          <section className="space-y-12">
+            <h3 className="text-2xl font-bold text-white">Detailed Mode Breakdown</h3>
+            
+            <div className="grid grid-cols-1 gap-12">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-500/20">Default</span>
+                  <h4 className="text-xl font-bold text-white">Speed-First Conversion</h4>
                 </div>
+                <p className="text-stone-400 text-sm leading-relaxed">
+                  Optimized for quick previews. It uses the <code className="text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded">gemini-3.1-flash-lite</code> model with low reasoning levels. 
+                  <br /><br />
+                  <strong className="text-red-400">Trade-off:</strong> This mode skips deep accessibility audits and uses aggressive image compression. It is prone to "hallucinations" in complex handwriting or dense diagrams.
+                </p>
               </div>
-              <div className="flex gap-6">
-                <div className="shrink-0 w-12 h-12 bg-white/5 rounded-full flex items-center justify-center font-black text-emerald-500 border border-white/10">02</div>
-                <div className="space-y-2">
-                  <h5 className="text-lg font-bold">Manual Selection</h5>
-                  <p className="text-stone-400 text-sm">Recommended for complex notes. You manually select diagram areas to ensure perfect extraction and context.</p>
+
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <span className="px-3 py-1 bg-indigo-500/10 text-indigo-500 text-[10px] font-black uppercase tracking-widest rounded-full border border-indigo-500/20">Customize</span>
+                  <h4 className="text-xl font-bold text-white">Accuracy-First Options</h4>
                 </div>
-              </div>
-              <div className="flex gap-6">
-                <div className="shrink-0 w-12 h-12 bg-white/5 rounded-full flex items-center justify-center font-black text-emerald-500 border border-white/10">03</div>
-                <div className="space-y-2">
-                  <h5 className="text-lg font-bold">Side-by-Side</h5>
-                  <p className="text-stone-400 text-sm">Creates a split view with the original image on the left and transcription on the right. Great for verification.</p>
-                </div>
-              </div>
-              <div className="flex gap-6">
-                <div className="shrink-0 w-12 h-12 bg-white/5 rounded-full flex items-center justify-center font-black text-emerald-500 border border-white/10">04</div>
-                <div className="space-y-2">
-                  <h5 className="text-lg font-bold">Page by Page</h5>
-                  <p className="text-stone-400 text-sm">Each page of the original image followed by its conversion. Ideal for direct comparison and verification.</p>
+                <p className="text-stone-400 text-sm leading-relaxed">
+                  Uses the full <code className="text-indigo-400 bg-indigo-400/10 px-1.5 py-0.5 rounded">gemini-3-flash</code> model with high reasoning. This is the recommended way for final submissions or study materials.
+                </p>
+                
+                <div className="space-y-8 mt-6">
+                  {/* Category 1: In-line Diagrams */}
+                  <div className="space-y-4">
+                    <h5 className="text-xs font-black uppercase tracking-widest text-stone-500 border-b border-white/5 pb-2">Category: In-line Diagrams</h5>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-6 bg-white/5 rounded-2xl border border-white/10 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Wand2 className="w-4 h-4 text-emerald-400" />
+                          <h6 className="font-bold text-white">Auto Detection</h6>
+                        </div>
+                        <p className="text-xs text-stone-400 leading-relaxed">
+                          Uses AI vision to scan your notes for visual elements. It automatically creates bounding boxes and extracts them, placing them contextually within the transcribed text. 
+                          <br /><br />
+                          <span className="text-emerald-400/80">Best for:</span> Standard diagrams and quick high-quality notes.
+                        </p>
+                      </div>
+                      <div className="p-6 bg-white/5 rounded-2xl border border-white/10 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Edit3 className="w-4 h-4 text-indigo-400" />
+                          <h6 className="font-bold text-white">Manual Selection</h6>
+                        </div>
+                        <p className="text-xs text-stone-400 leading-relaxed">
+                          Gives you full control. You draw boxes around the diagrams you want to extract. This ensures that only the relevant parts are captured and prevents AI from misidentifying text as diagrams.
+                          <br /><br />
+                          <span className="text-indigo-400/80">Best for:</span> Complex, dense, or overlapping notes where AI might struggle.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Category 2: Notes-Html */}
+                  <div className="space-y-4">
+                    <h5 className="text-xs font-black uppercase tracking-widest text-stone-500 border-b border-white/5 pb-2">Category: Notes-Html</h5>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-6 bg-white/5 rounded-2xl border border-white/10 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-amber-400" />
+                          <h6 className="font-bold text-white">Page by Page</h6>
+                        </div>
+                        <p className="text-xs text-stone-400 leading-relaxed">
+                          A linear, accessible flow. Each page of your original notes is displayed, followed immediately by its full HTML conversion. 
+                          <br /><br />
+                          <span className="text-amber-400/80">Best for:</span> Screen readers and mobile reading where a single column is preferred.
+                        </p>
+                      </div>
+                      <div className="p-6 bg-white/5 rounded-2xl border border-white/10 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Code className="w-4 h-4 text-purple-400" />
+                          <h6 className="font-bold text-white">Side by Side</h6>
+                        </div>
+                        <p className="text-xs text-stone-400 leading-relaxed">
+                          A professional verification layout. Displays the original notes and the converted HTML in a split-view. 
+                          <br /><br />
+                          <span className="text-purple-400/80">Best for:</span> Cross-referencing formulas and ensuring that the AI captured every detail correctly.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -252,13 +307,17 @@ const Documentation = ({ onClose }: { onClose: () => void }) => {
               </li>
               <li className="flex gap-3 text-stone-300 text-sm">
                 <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                For complex diagrams, use "Manual Selection" in Customize mode.
+              </li>
+              <li className="flex gap-3 text-stone-300 text-sm">
+                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
                 Avoid overlapping text and diagrams if possible.
               </li>
             </ul>
           </section>
           
           <footer className="py-12 text-center border-t border-white/10">
-            <p className="text-stone-500 text-xs font-black uppercase tracking-[0.3em]">InkAccess v1.0 • Built for Accessibility</p>
+            <p className="text-stone-500 text-xs font-black uppercase tracking-[0.3em]">InkAccess v2.5.0 • Built for Accessibility</p>
           </footer>
         </div>
       </div>
@@ -1406,7 +1465,7 @@ const runWcagCleanup = async (html: string, pageNumber: number): Promise<string>
   }
 };
 
-const autoDetectDiagrams = async (imageBase64: string): Promise<ManualSelection[]> => {
+const autoDetectDiagrams = async (imageBase64: string, mainMode: 'fast' | 'customize' = 'fast'): Promise<ManualSelection[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
   const prompt = `
     Identify all visual elements on this handwritten lecture notes page that are NOT standard text.
@@ -1430,16 +1489,21 @@ const autoDetectDiagrams = async (imageBase64: string): Promise<ManualSelection[
   
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: mainMode === 'fast' ? "gemini-3.1-flash-lite-preview" : "gemini-3-flash-preview",
       contents: [
         {
           parts: [
             { text: prompt },
-            { inlineData: { mimeType: "image/png", data: imageBase64.split(',')[1] } }
+            { inlineData: { mimeType: "image/jpeg", data: imageBase64 } }
           ]
         }
       ],
-      config: {
+      config: mainMode === 'fast' ? {
+        thinkingConfig: {
+          thinkingLevel: ThinkingLevel.LOW
+        },
+        responseMimeType: "application/json"
+      } : {
         responseMimeType: "application/json"
       }
     });
@@ -1812,9 +1876,10 @@ export default function App() {
   const [results, setResults] = useState<PageResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'preview' | 'code'>('preview');
-  const [mainMode, setMainMode] = useState<'default' | 'customize'>('default');
+  const [mainMode, setMainMode] = useState<'customize' | 'fast'>('fast');
   const [conversionMode, setConversionMode] = useState<'transcription' | 'inline-diagrams' | 'side-by-side'>('inline-diagrams');
   const [diagramDetectionMode, setDiagramDetectionMode] = useState<'manual' | 'auto'>('auto');
+  const [customizeSubMode, setCustomizeSubMode] = useState<'inline' | 'notes'>('inline');
   const [originalFileBase64, setOriginalFileBase64] = useState<string | null>(null);
   const [originalFile, setOriginalFile] = useState<File | null>(null);
   const [originalFileName, setOriginalFileName] = useState<string>('original_notes.pdf');
@@ -1828,12 +1893,12 @@ export default function App() {
   const [showStylingPanel, setShowStylingPanel] = useState<boolean>(false);
   const [showDocumentation, setShowDocumentation] = useState<boolean>(false);
   const [stylingOptions, setStylingOptions] = useState<StylingOptions>({
-    primaryColor: '#3498db',
+    primaryColor: '#0c0d0d',
     fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-    contentMaxWidth: '900px',
+    contentMaxWidth: '1100px',
     lineHeight: '1.6',
     fontSize: '16px',
-    sidebarBg: '#2c3e50',
+    sidebarBg: '#0c0d0d',
     sidebarText: '#ecf0f1',
   });
   const [modalViewMode, setModalViewMode] = useState<'editor' | 'preview' | 'split'>('split');
@@ -1862,12 +1927,29 @@ export default function App() {
     const newManualSelections: Record<number, ManualSelection[]> = { ...manualSelections };
     
     try {
-      for (let i = 0; i < activePreviews.length; i++) {
-        const preview = activePreviews[i];
-        const detections = await autoDetectDiagrams(preview.imageBase64);
+      const CONCURRENCY_LIMIT = mainMode === 'fast' ? 10 : 5;
+      let completedCount = 0;
+
+      const detectSinglePage = async (preview: PagePreview) => {
+        // Compress image for detection to speed up upload
+        const compressed = await compressImage(
+          preview.imageBase64, 
+          mainMode === 'fast' ? 1024 : 1600, 
+          0.5
+        );
+        const imageBase64 = compressed.split(',')[1];
+        
+        const detections = await autoDetectDiagrams(imageBase64, mainMode);
         newManualSelections[preview.pageNumber] = detections;
-        setProgress({ current: i + 1, total: activePreviews.length });
+        completedCount++;
+        setProgress({ current: completedCount, total: activePreviews.length });
+      };
+
+      for (let i = 0; i < activePreviews.length; i += CONCURRENCY_LIMIT) {
+        const batch = activePreviews.slice(i, i + CONCURRENCY_LIMIT);
+        await Promise.all(batch.map(preview => detectSinglePage(preview)));
       }
+
       setManualSelections(newManualSelections);
       return newManualSelections;
     } catch (err) {
@@ -2024,13 +2106,13 @@ export default function App() {
       const totalPages = activePreviews.length;
       setProgress({ current: 0, total: totalPages });
 
-      const CONCURRENCY_LIMIT = 5;
+      const CONCURRENCY_LIMIT = mainMode === 'fast' ? 10 : 5;
       const processSinglePage = async (preview: PagePreview) => {
         const i = preview.pageNumber;
         const selections = (providedSelections || manualSelections)[i] || [];
         
         // 4. Intelligent Caching check
-        const cacheKey = `${preview.imageBase64.substring(0, 1000)}_${conversionMode}_${selections.length}`;
+        const cacheKey = `${preview.imageBase64.substring(0, 1000)}_${conversionMode}_${selections.length}_${mainMode}`;
         if (resultCache.has(cacheKey)) {
           const cached = resultCache.get(cacheKey)!;
           setResults(prev => [...prev, cached].sort((a, b) => a.pageNumber - b.pageNumber));
@@ -2040,7 +2122,11 @@ export default function App() {
         }
 
         // 1. Client-Side Image Compression
-        const compressedBase64Full = await compressImage(preview.imageBase64);
+        const compressedBase64Full = await compressImage(
+          preview.imageBase64, 
+          mainMode === 'fast' ? 1024 : 1600, 
+          mainMode === 'fast' ? 0.5 : 0.75
+        );
         const imageBase64 = compressedBase64Full.split(',')[1];
 
         const transcriptionPrompt = `
@@ -2115,10 +2201,27 @@ export default function App() {
           11. IMPORTANT: Ensure EVERY diagram identified above has a corresponding <diagram-placeholder> in your output. Do not skip any.
         `;
 
-        const prompt = (conversionMode === 'transcription' || conversionMode === 'side-by-side') ? transcriptionPrompt : inlineDiagramsPrompt;
+        const fastPrompt = `
+          Convert the attached handwritten lecture notes page into a simple, accessible HTML transcription.
+          
+          DIAGRAM PLACEMENT: 
+          I have identified ${selections.length} diagrams at these coordinates:
+          ${selections.map((s, idx) => `diag-${idx}: [${s.bounds.ymin}, ${s.bounds.xmin}, ${s.bounds.ymax}, ${s.bounds.xmax}]`).join('\n')}
+
+          In the HTML, place <diagram-placeholder id="diag-N" ymin="Y1" xmin="X1" ymax="Y2" xmax="X2" alt="Detailed description"></diagram-placeholder> where they appear.
+          
+          REQUIREMENTS:
+          1. Direct transcription: Transcribe text exactly as written.
+          2. Minimal styling: Use basic tags (h4, p, ul, ol, table). Do NOT use complex color-coded containers.
+          3. MathJax: Use \\(inline\\) and \\[display\\] math.
+          4. Visual Descriptions: Provide a detailed 'alt' attribute for every <diagram-placeholder>.
+          5. Return ONLY the HTML content. No markdown blocks.
+        `;
+
+        const prompt = mainMode === 'fast' ? fastPrompt : ((conversionMode === 'transcription' || conversionMode === 'side-by-side') ? transcriptionPrompt : inlineDiagramsPrompt);
 
         const response = await ai.models.generateContent({
-          model: "gemini-3-flash-preview",
+          model: mainMode === 'fast' ? "gemini-3.1-flash-lite-preview" : "gemini-3-flash-preview",
           contents: [
             {
               parts: [
@@ -2126,7 +2229,12 @@ export default function App() {
                 { inlineData: { mimeType: "image/jpeg", data: imageBase64 } }
               ]
             }
-          ]
+          ],
+          config: mainMode === 'fast' ? {
+            thinkingConfig: {
+              thinkingLevel: ThinkingLevel.LOW
+            }
+          } : undefined
         });
 
         let cleanedHtml = (response.text || '').replace(/```html|```/g, '').trim();
@@ -2197,10 +2305,12 @@ export default function App() {
           cleanedHtml = doc.body.innerHTML;
         }
 
-        // 3. Concurrent WCAG Cleanup
-        const issues = checkAccessibility(cleanedHtml);
-        if (issues.length > 0) {
-          cleanedHtml = await runWcagCleanup(cleanedHtml, i);
+        // 3. Concurrent WCAG Cleanup (Skip in Fast Mode for speed)
+        if (mainMode !== 'fast') {
+          const issues = checkAccessibility(cleanedHtml);
+          if (issues.length > 0) {
+            cleanedHtml = await runWcagCleanup(cleanedHtml, i);
+          }
         }
 
         const accessibilityIssues = checkAccessibility(cleanedHtml);
@@ -2486,6 +2596,7 @@ export default function App() {
               <h1 className="font-bold text-2xl tracking-tighter italic">InkAccess 🖋️</h1>
               <div className="flex items-center gap-2">
                 <p className="text-[10px] text-stone-400 font-bold uppercase tracking-[0.2em]">Accessible HTML Generator</p>
+                <span className="text-[8px] text-emerald-500 font-black px-1.5 py-0.5 bg-emerald-500/10 rounded border border-emerald-500/20 ml-1">v2.5.0</span>
                 <div className="flex items-center gap-1.5 ml-2 bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
                   <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", process.env.GEMINI_API_KEY ? "bg-emerald-500" : "bg-red-500")} />
                   <span className="text-[8px] text-stone-300 font-black uppercase tracking-tighter">
@@ -2561,18 +2672,18 @@ export default function App() {
                 <div className="flex justify-center gap-6">
                   <button
                     onClick={() => {
-                      setMainMode('default');
+                      setMainMode('fast');
                       setConversionMode('inline-diagrams');
                       setDiagramDetectionMode('auto');
                     }}
                     className={cn(
                       "px-12 py-5 rounded-[32px] text-sm font-bold uppercase tracking-widest transition-all border-2 flex items-center gap-3",
-                      mainMode === 'default'
+                      mainMode === 'fast'
                         ? "bg-emerald-400 text-black border-white shadow-[0_0_40px_rgba(52,211,153,0.3)] scale-105" 
                         : "bg-white/5 text-stone-400 border-white/10 hover:bg-white/10 hover:border-white/20"
                     )}
                   >
-                    {mainMode === 'default' && <CheckCircle2 className="w-5 h-5" />}
+                    {mainMode === 'fast' && <CheckCircle2 className="w-5 h-5" />}
                     Default
                   </button>
                   <button
@@ -2590,68 +2701,122 @@ export default function App() {
                 </div>
 
                 {mainMode === 'customize' ? (
-                  <div className="flex flex-col items-center gap-6 animate-in fade-in slide-in-from-top-4 duration-500">
-                    <div className="text-[10px] text-stone-500 font-black uppercase tracking-[0.2em] mb-2 opacity-60">Select Custom Option</div>
-                    <div className="flex justify-center gap-4">
+                  <div className="flex flex-col items-center gap-8 animate-in fade-in slide-in-from-top-4 duration-500 w-full">
+                    {/* Sub-mode Tabs */}
+                    <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10">
                       <button
-                        onClick={() => setConversionMode('transcription')}
+                        onClick={() => setCustomizeSubMode('inline')}
                         className={cn(
-                          "px-8 py-3 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all border-2 flex items-center gap-2",
-                          conversionMode === 'transcription' 
-                            ? "bg-white/20 text-white border-white/40 shadow-lg" 
-                            : "bg-white/5 text-stone-500 border-white/10 hover:bg-white/10 hover:border-white/20"
+                          "px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                          customizeSubMode === 'inline' ? "bg-white text-black shadow-lg" : "text-stone-500 hover:text-stone-300"
                         )}
                       >
-                        {conversionMode === 'transcription' && <CheckCircle2 className="w-4 h-4" />}
-                        Page by Page
+                        In-line Diagrams
                       </button>
                       <button
-                        onClick={() => setConversionMode('side-by-side')}
+                        onClick={() => setCustomizeSubMode('notes')}
                         className={cn(
-                          "px-8 py-3 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all border-2 flex items-center gap-2",
-                          conversionMode === 'side-by-side' 
-                            ? "bg-white/20 text-white border-white/40 shadow-lg" 
-                            : "bg-white/5 text-stone-500 border-white/10 hover:bg-white/10 hover:border-white/20"
+                          "px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                          customizeSubMode === 'notes' ? "bg-white text-black shadow-lg" : "text-stone-500 hover:text-stone-300"
                         )}
                       >
-                        {conversionMode === 'side-by-side' && <CheckCircle2 className="w-4 h-4" />}
-                        Side by Side
+                        Notes-Html
                       </button>
-                      <button
-                        onClick={() => {
-                          setConversionMode('inline-diagrams');
-                          setDiagramDetectionMode('manual');
-                        }}
-                        className={cn(
-                          "px-8 py-3 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all border-2 flex items-center gap-2",
-                          conversionMode === 'inline-diagrams' && diagramDetectionMode === 'manual'
-                            ? "bg-white/20 text-white border-white/40 shadow-lg" 
-                            : "bg-white/5 text-stone-500 border-white/10 hover:bg-white/10 hover:border-white/20"
-                        )}
-                      >
-                        {(conversionMode === 'inline-diagrams' && diagramDetectionMode === 'manual') && <CheckCircle2 className="w-4 h-4" />}
-                        Manual Selection
-                      </button>
+                    </div>
+
+                    <div className="flex flex-wrap justify-center gap-4">
+                      {customizeSubMode === 'inline' ? (
+                        <>
+                          <button
+                            onClick={() => {
+                              setConversionMode('inline-diagrams');
+                              setDiagramDetectionMode('auto');
+                            }}
+                            className={cn(
+                              "px-8 py-3 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all border-2 flex items-center gap-2",
+                              conversionMode === 'inline-diagrams' && diagramDetectionMode === 'auto'
+                                ? "bg-white/20 text-white border-white/40 shadow-lg" 
+                                : "bg-white/5 text-stone-500 border-white/10 hover:bg-white/10 hover:border-white/20"
+                            )}
+                          >
+                            {(conversionMode === 'inline-diagrams' && diagramDetectionMode === 'auto') && <CheckCircle2 className="w-4 h-4" />}
+                            Auto Detection
+                          </button>
+                          <button
+                            onClick={() => {
+                              setConversionMode('inline-diagrams');
+                              setDiagramDetectionMode('manual');
+                            }}
+                            className={cn(
+                              "px-8 py-3 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all border-2 flex items-center gap-2",
+                              conversionMode === 'inline-diagrams' && diagramDetectionMode === 'manual'
+                                ? "bg-white/20 text-white border-white/40 shadow-lg" 
+                                : "bg-white/5 text-stone-500 border-white/10 hover:bg-white/10 hover:border-white/20"
+                            )}
+                          >
+                            {(conversionMode === 'inline-diagrams' && diagramDetectionMode === 'manual') && <CheckCircle2 className="w-4 h-4" />}
+                            Manual Selection
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => {
+                              setConversionMode('transcription');
+                            }}
+                            className={cn(
+                              "px-8 py-3 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all border-2 flex items-center gap-2",
+                              conversionMode === 'transcription' 
+                                ? "bg-white/20 text-white border-white/40 shadow-lg" 
+                                : "bg-white/5 text-stone-500 border-white/10 hover:bg-white/10 hover:border-white/20"
+                            )}
+                          >
+                            {conversionMode === 'transcription' && <CheckCircle2 className="w-4 h-4" />}
+                            Page by Page
+                          </button>
+                          <button
+                            onClick={() => {
+                              setConversionMode('side-by-side');
+                            }}
+                            className={cn(
+                              "px-8 py-3 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all border-2 flex items-center gap-2",
+                              conversionMode === 'side-by-side' 
+                                ? "bg-white/20 text-white border-white/40 shadow-lg" 
+                                : "bg-white/5 text-stone-500 border-white/10 hover:bg-white/10 hover:border-white/20"
+                            )}
+                          >
+                            {conversionMode === 'side-by-side' && <CheckCircle2 className="w-4 h-4" />}
+                            Side by Side
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-2 animate-in fade-in duration-500">
                     <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 rounded-full border border-emerald-500/20">
                       <Wand2 className="w-3 h-3 text-emerald-400" />
-                      <span className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">AI Auto Diagram Detection</span>
+                      <span className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">Optimized Fast Conversion</span>
                     </div>
                   </div>
                 )}
                 
                 <p className="text-stone-500 text-sm font-medium text-center max-w-lg italic">
-                  {mainMode === 'default' 
-                    ? "Uses AI to automatically identify and extract diagrams to place them contextually inline with the text (Fast & Automated)."
+                  {mainMode === 'fast'
+                    ? "Prioritizes speed using the fastest AI model. WARNING: This mode has the highest chance of making mistakes! (Default)."
                     : conversionMode === 'transcription' 
-                      ? "Strictly transcribes every word, formula, and symbol exactly as written in your notes, page by page, with notes followed by html." 
+                      ? "Strictly transcribes every word, formula, and symbol exactly as written in your notes, page by page, with notes followed by html. (High Accuracy)" 
                       : conversionMode === 'side-by-side'
-                        ? "Creates a two-column layout with the original handwritten notes on the left and the accessible transcription on the right."
-                        : "Manually select areas of your notes that contain diagrams to be extracted and placed inline (Recommended for accuracy)."}
+                        ? "Creates a two-column layout with the original handwritten notes on the left and the accessible transcription on the right. (High Accuracy)"
+                        : diagramDetectionMode === 'auto'
+                          ? "Uses AI to automatically identify and extract diagrams to place them contextually inline with the text. (High Accuracy)"
+                          : "Manually select areas of your notes that contain diagrams to be extracted and placed inline. (Highest Accuracy)"}
                 </p>
+                {mainMode === 'fast' && (
+                  <p className="text-red-400/60 text-[10px] uppercase font-black tracking-widest mt-2 animate-pulse">
+                    Choose a customize option for accuracy!
+                  </p>
+                )}
 
                 <button
                   onClick={() => setShowDocumentation(true)}
@@ -2782,7 +2947,13 @@ export default function App() {
                             onClick={async () => {
                               setIsProcessing(true);
                               try {
-                                const detections = await autoDetectDiagrams(preview.imageBase64);
+                                const compressed = await compressImage(
+                                  preview.imageBase64, 
+                                  mainMode === 'fast' ? 1024 : 1600, 
+                                  0.5
+                                );
+                                const imageBase64 = compressed.split(',')[1];
+                                const detections = await autoDetectDiagrams(imageBase64, mainMode);
                                 setManualSelections(prev => ({
                                   ...prev,
                                   [preview.pageNumber]: detections
